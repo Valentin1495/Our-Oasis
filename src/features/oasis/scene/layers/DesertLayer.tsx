@@ -5,42 +5,72 @@ interface Props {
 }
 
 export function DesertLayer({ model }: Props) {
-  const sandColor = model.isCommunitySuccess ? "#d9be82" : "#ddb77d";
-  const basinColor = model.hasWater ? "#a9875f" : "#b58e5d";
+  const sandFar = "#e8c98a";   // 배경 모래 언덕 (크림)
+  const sandNear = model.isCommunitySuccess ? "#d9ba7a" : "#ddb878"; // 전경 모래 (성공시 살짝 진함)
+  const basinRim = "#c4996a";  // 웅덩이 테두리
+  const basinFloor = model.hasWater ? "#a87850" : "#b88a5a"; // 웅덩이 바닥
 
   return (
-    <g>
+    <g aria-hidden="true">
+      {/* === 배경 — 먼 모래 언덕 === */}
+      <ellipse cx="285" cy="160" rx="80" ry="30" fill={sandFar} opacity="0.65" />
+      <ellipse cx="48" cy="168" rx="70" ry="26" fill={sandFar} opacity="0.55" />
+
+      {/* === 중경 — 모래 바닥 (굴곡진 웨이브) === */}
       <path
-        d="M0 151 Q55 128 112 148 T224 145 T320 150 V240 H0Z"
-        fill="#e8ca94"
-      />
-      <path
-        d="M0 181 Q66 158 128 180 T250 176 T320 174 V240 H0Z"
-        fill={sandColor}
+        d="M0 155 Q50 138 108 154 T220 148 T320 155 V240 H0Z"
+        fill="#e8c590"
       />
 
-      <ellipse cx="160" cy="201" rx="112" ry="31" fill={basinColor} />
-      <ellipse cx="160" cy="198" rx="103" ry="25" fill="#c5a06d" />
+      {/* === 전경 — 가까운 모래 층 === */}
+      <path
+        d="M0 178 Q60 160 122 178 T248 172 T320 170 V240 H0Z"
+        fill={sandNear}
+      />
 
+      {/* === 웅덩이 테두리 (타원형 움푹 팬 테두리) === */}
+      <ellipse cx="160" cy="204" rx="104" ry="28" fill={basinRim} />
+      {/* 안쪽 그림자 느낌 */}
+      <ellipse cx="160" cy="203" rx="96" ry="23" fill={basinFloor} />
+      {/* 하이라이트 테두리 (상단) */}
+      <path
+        d="M70 194 Q115 181 160 181 Q205 181 250 194"
+        fill="none"
+        stroke="#d4ac80"
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.7"
+      />
+
+      {/* === 마른 웅덩이 균열 (물 없을 때만) === */}
       {!model.hasWater && (
         <g
           fill="none"
-          stroke="#9d774c"
-          strokeWidth="2"
+          stroke="#9d7a50"
+          strokeWidth="1.8"
           strokeLinecap="round"
-          opacity="0.75"
+          opacity="0.6"
         >
-          <path d="M126 193 l-13 -9 m13 9 l-7 11 m7 -11 l12 -5" />
-          <path d="M188 203 l13 -10 m-13 10 l7 10 m-7 -10 l-13 -5" />
-          <path d="M157 183 l4 9 10 3" />
+          {/* Y자형 균열 3세트 */}
+          <path d="M125 196 l-8 -7 m8 7 l-5 9 m5 -9 l10 -4" />
+          <path d="M185 204 l9 -8 m-9 8 l5 9 m-5 -9 l-10 -4" />
+          <path d="M158 188 l3 8 8 3" />
+          <path d="M143 208 l-6 -5 6 -3" />
+          <path d="M172 193 l6 4 -4 7" />
         </g>
       )}
 
-      <g fill="#a98052">
-        <ellipse cx="35" cy="196" rx="8" ry="4" />
-        <ellipse cx="287" cy="190" rx="10" ry="5" />
-      </g>
+      {/* === 좌우 돌 (항상 고정) === */}
+      {/* 왼쪽 돌 */}
+      <ellipse cx="33" cy="193" rx="11" ry="6" fill="#b09068" />
+      <ellipse cx="33" cy="191" rx="9" ry="4" fill="#c8a87a" />
+      {/* 오른쪽 돌 (약간 더 큰) */}
+      <ellipse cx="289" cy="188" rx="13" ry="7" fill="#b09068" />
+      <ellipse cx="289" cy="186" rx="11" ry="5" fill="#c8a87a" />
+
+      {/* === 전경 작은 돌 === */}
+      <circle cx="58" cy="200" r="3.5" fill="#b09068" />
+      <circle cx="268" cy="196" r="4" fill="#b09068" />
     </g>
   );
 }
-
