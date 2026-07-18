@@ -1,0 +1,58 @@
+.scene {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  display: block;
+}
+
+.stageLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--oasis-mint-500);
+  letter-spacing: 0.02em;
+}
+
+.waterRise {
+  animation: water-rise 0.6s ease;
+}
+
+.fadeIn {
+  animation: fade-in 0.5s ease;
+}
+
+.dropFall {
+  animation: drop-fall 0.7s ease-out forwards;
+}
+
+.characterArrival {
+  transform-origin: 263px 205px;
+  animation: character-arrival 0.7s ease-out;
+}
+
+.reducedMotion *,
+.reducedMotion *::before,
+.reducedMotion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+@keyframes character-arrival {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}

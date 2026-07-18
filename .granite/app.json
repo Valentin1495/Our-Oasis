@@ -1,0 +1,13 @@
+{
+  "appName": "our-oasis",
+  "permissions": [
+    {
+      "name": "clipboard",
+      "access": "write"
+    },
+    {
+      "name": "clipboard",
+      "access": "read"
+    }
+  ]
+}

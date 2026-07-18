@@ -1,0 +1,101 @@
+.scene {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sceneFrame {
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  border: 1px solid rgba(107, 118, 132, 0.12);
+  border-radius: 24px;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.stageLabel {
+  margin: 0;
+  color: #4e5968;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.scene[data-success="true"] .stageLabel {
+  color: #087f78;
+}
+
+.scene[data-perfect="true"] .stageLabel {
+  color: #805b00;
+}
+
+.waterShape {
+  transition:
+    rx 0.45s ease,
+    ry 0.45s ease,
+    fill 0.3s ease;
+}
+
+.layerReveal {
+  animation: layer-reveal 0.35s ease-out;
+}
+
+.dropFall {
+  animation: prototype-drop-fall 0.7s ease-out forwards;
+}
+
+.reducedMotion *,
+.reducedMotion *::before,
+.reducedMotion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+@keyframes layer-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes prototype-drop-fall {
+  from {
+    opacity: 0;
+    transform: translateY(-52px);
+  }
+  65% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.85;
+    transform: translateY(95px);
+  }
+}
+
+@media (max-height: 650px) {
+  .sceneFrame {
+    max-width: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene *,
+  .scene *::before,
+  .scene *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
