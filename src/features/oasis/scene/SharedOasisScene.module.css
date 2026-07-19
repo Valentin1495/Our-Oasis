@@ -1,0 +1,146 @@
+.scene {
+  width: min(84vw, 320px);
+  min-width: 258px;
+  margin: 0 auto;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.pondGrowth {
+  transform: scale(var(--pond-scale));
+  transform-origin: 138px 108px;
+  transition:
+    transform 0.5s ease 0.25s,
+    opacity 0.25s ease;
+}
+
+.deepWater {
+  animation: water-depth-reveal 0.35s ease-out;
+}
+
+.plantReveal {
+  transform-origin: 219px 145px;
+  animation: plant-reveal 0.35s ease-out;
+}
+
+.budGrowth {
+  transform: scale(var(--bud-scale));
+  transform-origin: 220px 115px;
+  transition: transform 0.4s ease;
+}
+
+.flowerReveal,
+.perfectReveal {
+  animation: perfect-reveal 0.4s ease-out;
+}
+
+.dropFall {
+  animation: top-view-drop 0.55s ease-in forwards;
+}
+
+.impactRipple {
+  opacity: 0;
+  transform-origin: 104px 105px;
+  animation: impact-ripple 0.35s ease-out 0.42s forwards;
+}
+
+.percentLabel {
+  margin: 5px 0 0;
+  color: #71807d;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  letter-spacing: 0.015em;
+}
+
+.scene[data-success="true"] .percentLabel {
+  color: #5e7e7b;
+}
+
+.reducedMotion *,
+.reducedMotion *::before,
+.reducedMotion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
+}
+
+@keyframes top-view-drop {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.8;
+    transform: translateY(74px);
+  }
+}
+
+@keyframes impact-ripple {
+  from {
+    opacity: 0.85;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+@keyframes water-depth-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes plant-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes perfect-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 340px) {
+  .scene {
+    width: 258px;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene *,
+  .scene *::before,
+  .scene *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

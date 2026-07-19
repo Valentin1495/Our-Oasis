@@ -1,0 +1,171 @@
+.page {
+  color: #191f28;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px var(--screen-padding-x) 8px;
+}
+
+.headerCopy {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  color: #191f28;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: #6b7684;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayBadge {
+  flex-shrink: 0;
+  padding-top: 3px;
+  color: #299f9a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 var(--screen-padding-x) 20px;
+}
+
+.visualSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.progressStatus {
+  min-height: 68px;
+  margin-top: 18px;
+  text-align: center;
+}
+
+.progressStatusContent {
+  animation: status-change 0.2s ease-out;
+}
+
+.progressHeadline {
+  margin: 0;
+  color: #333d4b;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+.progressDetail {
+  margin: 5px 0 0;
+  color: #6b7684;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.secondaryActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 4px;
+}
+
+.textAction {
+  min-width: 72px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #299f9a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.textAction:disabled {
+  color: #8b95a1;
+  cursor: wait;
+}
+
+.actionDivider {
+  color: #b0b8c1;
+}
+
+.inviteFeedback {
+  min-height: 18px;
+  margin: -2px 0 0;
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.bottomCTA {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  padding: 10px var(--screen-padding-x)
+    calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(111, 98, 78, 0.1);
+  background: rgba(251, 247, 240, 0.98);
+}
+
+@keyframes status-change {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-height: 680px) {
+  .header {
+    padding-top: 12px;
+  }
+
+  .progressStatus {
+    margin-top: 10px;
+  }
+
+  .secondaryActions {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressStatusContent {
+    animation: none;
+  }
+}
+
+.reducedMotion .progressStatusContent {
+  animation: none;
+}

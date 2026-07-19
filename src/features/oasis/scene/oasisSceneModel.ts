@@ -11,9 +11,9 @@ export interface OasisSceneModel {
   phase: OasisPhase;
   waterLevel: number;
   hasWater: boolean;
-  vegetationLevel: 0 | 1 | 2 | 3 | 4 | 5;
-  animalLevel: 0 | 1 | 2;
-  hasWarmLight: boolean;
+  edgePlantLevel: 0 | 1 | 2;
+  bloomState: "none" | "bud" | "flower";
+  bloomProgress: number;
   isCommunitySuccess: boolean;
   isPerfect: boolean;
 }
@@ -43,36 +43,22 @@ export function deriveOasisSceneModel(percent: number): OasisSceneModel {
               ? "community-success"
               : "perfect";
 
-  const vegetationLevel: OasisSceneModel["vegetationLevel"] =
-    phase === "dry"
-      ? 0
-      : phase === "first-life"
-        ? 1
-        : phase === "growing"
-          ? 2
-          : phase === "thriving"
-            ? 3
-            : phase === "community-success"
-              ? 4
-              : 5;
-
-  const animalLevel: OasisSceneModel["animalLevel"] =
-    phase === "thriving"
-      ? 1
-      : phase === "community-success" || phase === "perfect"
-        ? 2
-        : 0;
-
   return {
     percent: safePercent,
     phase,
-    // 첫 행동은 바로 보이게 하되 이후에는 100%까지 연속적으로 증가한다.
+    // 1%의 첫 행동은 식별 가능한 최소 수위로 보여 주고 이후 연속 증가한다.
     waterLevel:
-      safePercent === 0 ? 0 : 0.12 + (safePercent / 100) * 0.88,
+      safePercent === 0 ? 0 : 0.06 + (safePercent / 100) * 0.94,
     hasWater: safePercent > 0,
-    vegetationLevel,
-    animalLevel,
-    hasWarmLight: safePercent >= 75,
+    edgePlantLevel: safePercent < 25 ? 0 : safePercent <= 75 ? 1 : 2,
+    bloomState:
+      safePercent >= 100 ? "flower" : safePercent >= 75 ? "bud" : "none",
+    bloomProgress:
+      safePercent < 75
+        ? 0
+        : safePercent >= 100
+          ? 1
+          : 0.55 + ((safePercent - 75) / 25) * 0.45,
     isCommunitySuccess: safePercent >= 75,
     isPerfect: safePercent >= 100,
   };

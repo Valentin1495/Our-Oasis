@@ -4,6 +4,7 @@ import type { DailyHydration } from "../../types";
 
 interface Props {
   hydration: DailyHydration | null;
+  isVisualFeedbackPlaying?: boolean;
 }
 
 const DROP_ORDINALS = ["첫", "두", "세", "네"] as const;
@@ -12,7 +13,10 @@ function formatMl(value: number): string {
   return `${value.toLocaleString("ko-KR")}ml`;
 }
 
-export function WaterLogButton({ hydration }: Props) {
+export function WaterLogButton({
+  hydration,
+  isVisualFeedbackPlaying = false,
+}: Props) {
   const {
     logWaterCup,
     isLoggingWater,
@@ -35,6 +39,7 @@ export function WaterLogButton({ hydration }: Props) {
   const consumedMl = hydration?.consumedMl ?? 0;
   const goalMl = hydration?.goalMl ?? 0;
   const goalComplete = goalMl > 0 && consumedMl >= goalMl;
+  const isButtonDisabled = isLoggingWater || isVisualFeedbackPlaying;
 
   const feedbackMessage = waterLogFeedback
     ? waterLogFeedback.kind === "contribution"
@@ -142,16 +147,18 @@ export function WaterLogButton({ hydration }: Props) {
       <button
         type="button"
         onClick={logWaterCup}
-        disabled={isLoggingWater}
+        disabled={isButtonDisabled}
         aria-label={
-          isContributionComplete
-            ? "물 섭취를 개인 기록에 추가하기, 오늘 공동 기여 4개 완료"
-            : `물 한 컵 기록하기, 오늘 공동 기여 ${drops}/4`
+          isButtonDisabled
+            ? "물 기록 처리 중"
+            : isContributionComplete
+              ? "물 섭취를 개인 기록에 추가하기, 오늘 공동 기여 4개 완료"
+              : `공유 오아시스에 물 한 잔 채우기, 오늘 공동 기여 ${drops}/4`
         }
         style={{
           width: "100%",
           padding: "18px",
-          backgroundColor: isLoggingWater
+          backgroundColor: isButtonDisabled
             ? "var(--oasis-mint-300)"
             : "var(--oasis-mint-500)",
           color: "#fff",
@@ -159,16 +166,16 @@ export function WaterLogButton({ hydration }: Props) {
           fontWeight: 700,
           border: "none",
           borderRadius: "14px",
-          cursor: isLoggingWater ? "wait" : "pointer",
+          cursor: isButtonDisabled ? "wait" : "pointer",
           transition: "background-color 0.15s ease, transform 0.1s ease",
           letterSpacing: "-0.01em",
         }}
       >
-        {isLoggingWater
+        {isButtonDisabled
           ? "기록 중..."
           : isContributionComplete
-            ? "💧 물 섭취 기록하기"
-            : "💧 물 한 컵 마셨어요"}
+            ? "물 한 잔 기록하기"
+            : "물 한 잔 채우기"}
       </button>
     </div>
   );

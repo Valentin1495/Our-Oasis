@@ -6,9 +6,15 @@ interface Props {
   open: boolean;
   oasisState: OasisState;
   onClose: () => void;
+  onViewHistory: () => void;
 }
 
-export function DayResultModal({ open, oasisState, onClose }: Props) {
+export function DayResultModal({
+  open,
+  oasisState,
+  onClose,
+  onViewHistory,
+}: Props) {
   const { sharedProgressPercent, totalDrops, room } = oasisState;
   const daysLeft = room.durationDays - room.dayIndex;
   const {
@@ -109,12 +115,31 @@ export function DayResultModal({ open, oasisState, onClose }: Props) {
             {isRareFinalOasisUnlocked
               ? "✨ 7일 모두 완성해 희귀 오아시스를 얻었어요!"
               : isSpecialCharacterSettled
-                ? "🦊 특별 캐릭터가 오아시스에 정착했어요!"
+                ? "💧 모두의 물방울 배지를 얻었어요!"
                 : isFinalOasisUnlocked
                   ? "🎉 최종 오아시스를 얻었어요!"
-              : "🦊 모든 팀원이 참여해 특별 캐릭터가 찾아왔어요!"}
+              : "💧 모든 팀원이 오늘 함께 채웠어요!"}
           </p>
         )}
+
+        <button
+          type="button"
+          onClick={onViewHistory}
+          style={{
+            alignSelf: "center",
+            minHeight: "44px",
+            padding: "8px 12px",
+            border: 0,
+            background: "transparent",
+            color: "var(--oasis-blue-400)",
+            fontSize: "14px",
+            fontWeight: 700,
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          7일 기록 보기
+        </button>
       </div>
     </BottomSheet>
   );

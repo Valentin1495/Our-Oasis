@@ -1,0 +1,66 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seed {
+  display: block;
+  width: 21px;
+  height: 14px;
+  border-radius: 58% 42% 55% 45% / 55% 48% 52% 45%;
+  transform: rotate(-12deg);
+}
+
+.item:nth-child(even) .seed {
+  transform: rotate(10deg);
+}
+
+.complete {
+  border: 1.5px solid #77c9c3;
+  background: #77c9c3;
+}
+
+.pending {
+  border: 1.5px solid #c9c0b4;
+  background: transparent;
+}
+
+.meDot {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #4ab3af;
+  transform: translateX(-50%);
+}
+
+.summary {
+  margin: 0;
+  color: #71807d;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}

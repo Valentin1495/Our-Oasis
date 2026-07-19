@@ -24,12 +24,20 @@ describe("deriveOasisSceneModel", () => {
     });
   });
 
-  it("1%부터 물과 첫 새싹이 활성화된다", () => {
+  it("1%부터 식별 가능한 최소 수위가 활성화된다", () => {
     const model = deriveOasisSceneModel(1);
 
     expect(model.hasWater).toBe(true);
     expect(model.waterLevel).toBeGreaterThan(0);
-    expect(model.vegetationLevel).toBe(1);
+    expect(model.bloomState).toBe("none");
+    expect(model.edgePlantLevel).toBe(0);
+  });
+
+  it("25%부터 연못 가장자리 잎이 활성화된다", () => {
+    expect(deriveOasisSceneModel(25)).toMatchObject({
+      edgePlantLevel: 1,
+      bloomState: "none",
+    });
   });
 
   it("75%는 공동 성공 상태다", () => {
@@ -37,7 +45,20 @@ describe("deriveOasisSceneModel", () => {
       phase: "community-success",
       isCommunitySuccess: true,
       isPerfect: false,
+      bloomState: "bud",
+      edgePlantLevel: 1,
+      bloomProgress: 0.55,
     });
+  });
+
+  it("76~99%에서는 잎과 꽃봉오리가 점진적으로 성장한다", () => {
+    const at76 = deriveOasisSceneModel(76);
+    const at99 = deriveOasisSceneModel(99);
+
+    expect(at76.edgePlantLevel).toBe(2);
+    expect(at99.edgePlantLevel).toBe(2);
+    expect(at99.bloomProgress).toBeGreaterThan(at76.bloomProgress);
+    expect(at99.bloomProgress).toBeLessThan(1);
   });
 
   it("100%는 완벽 성공 상태다", () => {
@@ -46,6 +67,9 @@ describe("deriveOasisSceneModel", () => {
       isCommunitySuccess: true,
       isPerfect: true,
       waterLevel: 1,
+      bloomState: "flower",
+      edgePlantLevel: 2,
+      bloomProgress: 1,
     });
   });
 

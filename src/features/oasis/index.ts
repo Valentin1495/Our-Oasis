@@ -3,7 +3,15 @@ export { MemberList } from "./components/MemberList";
 export { OasisDebugPanel } from "./components/OasisDebugPanel";
 export { OasisScene } from "./components/OasisScene";
 export type { OasisSceneVariant } from "./components/OasisScene";
+export { ParticipantDrops } from "./components/ParticipantDrops";
 export { SharedProgressBar } from "./components/SharedProgressBar";
+export {
+  deriveOasisProgressMessage,
+  deriveParticipantSummary,
+  getTodayMaxDrops,
+  type OasisProgressMessage,
+  type ParticipantSummary,
+} from "./oasisMainViewModel";
 export {
   deriveOasisSceneModel,
   type OasisPhase,

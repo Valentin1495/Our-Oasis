@@ -1,8 +1,10 @@
 import type { OasisStage } from "../../../types";
-import { PrototypeOasisScene } from "../scene/PrototypeOasisScene";
+import { SharedOasisScene } from "../scene/SharedOasisScene";
 import { LegacyOasisScene } from "./LegacyOasisScene";
+import { ConceptATerrarium } from "../scene/ConceptATerrarium";
+import { ConceptBWatercolor } from "../scene/ConceptBWatercolor";
 
-export type OasisSceneVariant = "prototype" | "legacy";
+export type OasisSceneVariant = "shared" | "legacy" | "concept-a" | "concept-b";
 
 interface Props {
   stage: OasisStage;
@@ -16,7 +18,7 @@ interface Props {
 }
 
 /**
- * 새 시각 프로토타입을 기본으로 렌더링하되, 개발 패널에서 기존 장면과
+ * 새 공유형 오아시스를 기본으로 렌더링하되, 개발 패널에서 기존 장면과
  * 즉시 비교할 수 있도록 동일한 public props를 유지하는 facade다.
  */
 export function OasisScene({
@@ -27,7 +29,7 @@ export function OasisScene({
   showSpecialCharacter = false,
   isFinalOasisUnlocked = false,
   reducedMotion = false,
-  variant = "prototype",
+  variant = "shared",
 }: Props) {
   if (variant === "legacy") {
     return (
@@ -43,13 +45,31 @@ export function OasisScene({
     );
   }
 
+  if (variant === "concept-a") {
+    return (
+      <ConceptATerrarium
+        percent={sharedProgressPercent}
+        dropAnimationTick={dropAnimationTick}
+        reducedMotion={reducedMotion}
+      />
+    );
+  }
+
+  if (variant === "concept-b") {
+    return (
+      <ConceptBWatercolor
+        percent={sharedProgressPercent}
+        dropAnimationTick={dropAnimationTick}
+        reducedMotion={reducedMotion}
+      />
+    );
+  }
+
   return (
-    <PrototypeOasisScene
+    <SharedOasisScene
       percent={sharedProgressPercent}
       dropAnimationTick={dropAnimationTick}
       reducedMotion={reducedMotion}
-      showSpecialCharacter={showSpecialCharacter}
-      showFinalReward={isFinalOasisUnlocked}
     />
   );
 }

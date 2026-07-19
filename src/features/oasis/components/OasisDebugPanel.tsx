@@ -30,7 +30,7 @@ export function OasisDebugPanel({
   const isPreviewing =
     previewPercent !== null ||
     reducedMotion ||
-    sceneVariant !== "prototype";
+    sceneVariant !== "shared";
 
   return (
     <details className={styles.panel}>
@@ -93,11 +93,11 @@ export function OasisDebugPanel({
             <input
               type="radio"
               name="oasis-scene-variant"
-              value="prototype"
-              checked={sceneVariant === "prototype"}
-              onChange={() => onSceneVariantChange("prototype")}
+              value="shared"
+              checked={sceneVariant === "shared"}
+              onChange={() => onSceneVariantChange("shared")}
             />
-            프로토타입
+            공유형
           </label>
           <label>
             <input
@@ -107,7 +107,27 @@ export function OasisDebugPanel({
               checked={sceneVariant === "legacy"}
               onChange={() => onSceneVariantChange("legacy")}
             />
-            기존 버전
+            기존 풍경형
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="oasis-scene-variant"
+              value="concept-a"
+              checked={sceneVariant === "concept-a"}
+              onChange={() => onSceneVariantChange("concept-a")}
+            />
+            컨셉 A (테라리움)
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="oasis-scene-variant"
+              value="concept-b"
+              checked={sceneVariant === "concept-b"}
+              onChange={() => onSceneVariantChange("concept-b")}
+            />
+            컨셉 B (수채화)
           </label>
         </fieldset>
 
