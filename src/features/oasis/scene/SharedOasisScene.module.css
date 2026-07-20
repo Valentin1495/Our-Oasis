@@ -1,66 +1,76 @@
 .scene {
-  width: min(84vw, 320px);
-  min-width: 258px;
+  width: min(100%, 360px);
+  min-width: 0;
   margin: 0 auto;
 }
 
-.svg {
-  display: block;
+.canvas {
+  position: relative;
   width: 100%;
-  height: auto;
-  overflow: visible;
 }
 
-.pondGrowth {
-  transform: scale(var(--pond-scale));
-  transform-origin: 138px 108px;
-  transition:
-    transform 0.5s ease 0.25s,
-    opacity 0.25s ease;
+.visual {
+  position: relative;
 }
 
-.deepWater {
-  animation: water-depth-reveal 0.35s ease-out;
+.milestoneBadge {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  z-index: 3;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-content: center;
+  border: 6px solid currentColor;
+  border-radius: 50%;
+  background: rgba(255, 253, 248, 0.95);
+  box-shadow:
+    0 0 0 5px rgba(255, 255, 255, 0.72),
+    0 5px 16px rgba(73, 58, 30, 0.16);
+  text-align: center;
+  transform: translateX(-50%);
+  animation: badge-reveal 0.45s cubic-bezier(0.22, 0.82, 0.32, 1);
 }
 
-.plantReveal {
-  transform-origin: 219px 145px;
-  animation: plant-reveal 0.35s ease-out;
+.milestoneBadge strong,
+.milestoneBadge span {
+  display: block;
 }
 
-.budGrowth {
-  transform: scale(var(--bud-scale));
-  transform-origin: 220px 115px;
-  transition: transform 0.4s ease;
+.milestoneBadge strong {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
-.flowerReveal,
-.perfectReveal {
-  animation: perfect-reveal 0.4s ease-out;
+.milestoneBadge span {
+  margin-top: 4px;
+  font-size: 9px;
+  font-weight: 800;
 }
 
-.dropFall {
-  animation: top-view-drop 0.55s ease-in forwards;
+.successBadge {
+  color: #299f78;
 }
 
-.impactRipple {
-  opacity: 0;
-  transform-origin: 104px 105px;
-  animation: impact-ripple 0.35s ease-out 0.42s forwards;
+.perfectBadge {
+  color: #b78617;
+  background: rgba(255, 251, 235, 0.97);
+  box-shadow:
+    0 0 0 5px rgba(255, 244, 198, 0.78),
+    0 5px 18px rgba(161, 116, 18, 0.2);
 }
 
 .percentLabel {
-  margin: 5px 0 0;
+  margin: 2px 0 0;
   color: #71807d;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.4;
   text-align: center;
   letter-spacing: 0.015em;
-}
-
-.scene[data-success="true"] .percentLabel {
-  color: #5e7e7b;
 }
 
 .reducedMotion *,
@@ -73,63 +83,36 @@
   transition-delay: 0ms !important;
 }
 
-@keyframes top-view-drop {
+@keyframes badge-reveal {
   from {
     opacity: 0;
-    transform: translateY(0);
-  }
-  20% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.8;
-    transform: translateY(74px);
-  }
-}
-
-@keyframes impact-ripple {
-  from {
-    opacity: 0.85;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 0;
-    transform: scale(2.2);
-  }
-}
-
-@keyframes water-depth-reveal {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes plant-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(5px) scale(0.92);
+    transform: translateX(-50%) scale(0.76);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes perfect-reveal {
-  from {
-    opacity: 0;
-    transform: scale(0.88);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateX(-50%) scale(1);
   }
 }
 
 @media (max-width: 340px) {
   .scene {
-    width: 258px;
-    min-width: 0;
+    width: 100%;
+  }
+
+  .milestoneBadge {
+    width: 66px;
+    height: 66px;
+    border-width: 5px;
+  }
+
+  .milestoneBadge strong {
+    font-size: 19px;
+  }
+}
+
+@media (max-height: 680px) {
+  .scene {
+    width: min(86vw, 330px);
   }
 }
 

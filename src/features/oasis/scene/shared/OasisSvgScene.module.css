@@ -1,0 +1,156 @@
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.pondGrowth {
+  transform: scale(var(--pond-scale));
+  transform-origin: var(--pond-origin);
+  transition:
+    transform 0.5s ease 0.25s,
+    opacity 0.25s ease;
+}
+
+.deepWater {
+  animation: water-depth-reveal 0.35s ease-out;
+}
+
+.tileReveal {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: tile-reveal 0.36s cubic-bezier(0.22, 0.85, 0.35, 1);
+}
+
+.budGrowth {
+  transform-origin: 181px 171px;
+  animation: bud-reveal 0.4s ease-out;
+}
+
+.flowerReveal,
+.perfectReveal {
+  transform-origin: center;
+  animation: perfect-reveal 0.5s ease-out;
+}
+
+.successGlow {
+  transform-origin: 180px 164px;
+  animation: success-glow 0.6s ease-out;
+}
+
+.dropTravel {
+  offset-anchor: center;
+  offset-distance: 0%;
+  animation: drop-travel 0.52s cubic-bezier(0.38, 0, 0.72, 0.52) forwards;
+}
+
+.impactRipple {
+  opacity: 0;
+  transform-origin: 180px 171px;
+  animation: impact-ripple 0.32s ease-out forwards;
+}
+
+.thresholdBloom {
+  transform-origin: 180px 167px;
+  animation: threshold-bloom 0.6s ease-out forwards;
+}
+
+.goldenBurst {
+  transform-origin: 180px 170px;
+  animation: golden-burst 0.9s ease-out forwards;
+}
+
+@keyframes drop-travel {
+  0% {
+    opacity: 0;
+    offset-distance: 0%;
+    transform: scale(0.7);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+    offset-distance: 100%;
+    transform: scale(1);
+  }
+}
+
+@keyframes impact-ripple {
+  from {
+    opacity: 0.92;
+    transform: scale(0.45);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+@keyframes water-depth-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes tile-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.78);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bud-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.65);
+  }
+}
+
+@keyframes perfect-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes success-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+}
+
+@keyframes threshold-bloom {
+  from {
+    opacity: 0.9;
+    transform: scale(0.65);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes golden-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-7deg);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45) rotate(8deg);
+  }
+}

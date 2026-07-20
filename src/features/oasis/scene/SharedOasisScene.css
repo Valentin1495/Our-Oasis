@@ -1,0 +1,863 @@
+.shared-oasis-scene {
+  --oasis-size: 52%;
+  --member-size: 20%;
+  --member-label-offset: 10%;
+
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 360px);
+  aspect-ratio: 360 / 520;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(219, 174, 108, 0.34);
+  border-radius: 28px;
+  background: #e8bc7e;
+  box-shadow:
+    0 16px 36px rgba(92, 62, 29, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.shared-oasis-scene__background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 226, 185, 0.18) 0%,
+      rgba(245, 207, 146, 0.04) 47%,
+      rgba(206, 143, 71, 0.12) 100%
+    ),
+    url("./shared/assets/bg_sand.png");
+  background-position: center;
+  background-size: cover;
+  transform: scale(1.03);
+}
+
+.shared-oasis-scene__background::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 86% 4%, rgba(64, 55, 76, 0.54), transparent 30%),
+    radial-gradient(
+      circle at 50% 58%,
+      rgba(255, 250, 219, 0.2),
+      transparent 45%
+    );
+  content: "";
+  opacity: 0.28;
+  transition: opacity 520ms ease;
+}
+
+.shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
+  .shared-oasis-scene__background::after {
+  opacity: 0.82;
+}
+
+.shared-oasis-scene__progress {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  left: 20px;
+  z-index: 400;
+  height: 92px;
+  color: #fff9ef;
+  text-shadow: 0 1px 3px rgba(70, 46, 27, 0.42);
+}
+
+.shared-oasis-scene__progress-track {
+  position: absolute;
+  top: 15px;
+  right: 8%;
+  left: 8%;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.14);
+}
+
+.shared-oasis-scene__progress-fill {
+  display: block;
+  width: var(--scene-progress);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(239, 255, 252, 0.88),
+    rgba(126, 232, 220, 0.9)
+  );
+  box-shadow: 0 0 6px rgba(112, 237, 222, 0.56);
+  transition: width 520ms ease;
+}
+
+.shared-oasis-scene__milestones {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.shared-oasis-scene__milestone {
+  position: absolute;
+  top: 0;
+  display: flex;
+  width: 54px;
+  flex-direction: column;
+  align-items: center;
+  color: rgba(255, 249, 237, 0.48);
+  font-size: 7px;
+  line-height: 1.05;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.shared-oasis-scene__milestone:nth-child(1) {
+  left: 8%;
+}
+
+.shared-oasis-scene__milestone:nth-child(2) {
+  left: 29%;
+}
+
+.shared-oasis-scene__milestone:nth-child(3) {
+  left: 50%;
+}
+
+.shared-oasis-scene__milestone:nth-child(4) {
+  left: 71%;
+}
+
+.shared-oasis-scene__milestone:nth-child(5) {
+  left: 92%;
+}
+
+.shared-oasis-scene__milestone-dot {
+  display: grid;
+  width: 10px;
+  height: 10px;
+  place-items: center;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  background: rgba(255, 248, 234, 0.34);
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+.shared-oasis-scene__milestone strong {
+  margin-top: 6px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.shared-oasis-scene__milestone
+  > span:last-child:not(.shared-oasis-scene__milestone-dot) {
+  max-width: 52px;
+  margin-top: 3px;
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.shared-oasis-scene__milestone--reached {
+  color: #fff;
+}
+
+.shared-oasis-scene__milestone--reached .shared-oasis-scene__milestone-dot {
+  border-color: #eafffb;
+  background: #f7fffd;
+  box-shadow:
+    0 0 0 3px rgba(126, 232, 220, 0.12),
+    0 0 10px rgba(126, 232, 220, 0.78);
+}
+
+.shared-oasis-scene__milestone--shared .shared-oasis-scene__milestone-dot {
+  width: 32px;
+  height: 32px;
+  margin-top: 0;
+  border: 2px solid rgba(225, 255, 249, 0.58);
+  background: radial-gradient(
+    circle at 35% 28%,
+    rgba(220, 255, 249, 0.82),
+    rgba(89, 168, 161, 0.72)
+  );
+  box-shadow: 0 0 8px rgba(125, 237, 220, 0.28);
+  opacity: 0.72;
+  transition:
+    width 240ms ease,
+    height 240ms ease,
+    margin 240ms ease,
+    opacity 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.shared-oasis-scene__milestone--shared.shared-oasis-scene__milestone--reached
+  .shared-oasis-scene__milestone-dot {
+  width: 40px;
+  height: 40px;
+  margin-top: -4px;
+  border-width: 3px;
+  background: radial-gradient(circle at 35% 28%, #d7fff8, #60cfc4);
+  box-shadow:
+    0 0 0 5px rgba(121, 225, 211, 0.2),
+    0 0 19px rgba(125, 237, 220, 0.86);
+  opacity: 1;
+}
+
+.shared-oasis-scene__share-mark {
+  width: 19px;
+  height: 19px;
+  overflow: visible;
+  fill: #216c69;
+  stroke: #216c69;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.shared-oasis-scene__milestone--perfect .shared-oasis-scene__milestone-dot {
+  width: 36px;
+  height: 36px;
+  margin-top: -2px;
+  border: 2px solid rgba(255, 224, 163, 0.42);
+  background: #5b565c;
+  box-shadow: 0 0 7px rgba(255, 211, 126, 0.2);
+  opacity: 0.62;
+  transition:
+    width 240ms ease,
+    height 240ms ease,
+    margin 240ms ease,
+    opacity 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.shared-oasis-scene__milestone--perfect.shared-oasis-scene__milestone--reached
+  .shared-oasis-scene__milestone-dot {
+  width: 44px;
+  height: 44px;
+  margin-top: -6px;
+  border-color: rgba(255, 224, 163, 0.72);
+  background: #463e48;
+  box-shadow: 0 0 17px rgba(255, 211, 126, 0.44);
+  opacity: 1;
+}
+
+.shared-oasis-scene__milestone--perfect .shared-oasis-scene__milestone-dot img {
+  width: 135%;
+  height: 135%;
+  filter: grayscale(0.72) brightness(0.72);
+  object-fit: contain;
+  transition: filter 240ms ease;
+}
+
+.shared-oasis-scene__milestone--perfect.shared-oasis-scene__milestone--reached
+  .shared-oasis-scene__milestone-dot
+  img {
+  filter: none;
+}
+
+.shared-oasis-scene__bloom-anchor {
+  position: absolute;
+  top: 66%;
+  left: 50%;
+  z-index: 42;
+  width: 72%;
+  height: 27%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__bloom-aura,
+.shared-oasis-scene__impact-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.shared-oasis-scene__bloom-aura {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(111, 213, 242, 0.42) 0%,
+    rgba(114, 139, 232, 0.22) 38%,
+    rgba(135, 89, 208, 0.08) 62%,
+    transparent 76%
+  );
+  filter: blur(18px);
+  opacity: 0.6;
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+
+.shared-oasis-scene[data-oasis-status="SHARED_SUCCESS"]
+  .shared-oasis-scene__bloom-aura {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(94, 227, 228, 0.48) 0%,
+    rgba(95, 151, 231, 0.26) 40%,
+    rgba(125, 91, 210, 0.1) 64%,
+    transparent 78%
+  );
+}
+
+.shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
+  .shared-oasis-scene__bloom-aura {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(100, 221, 242, 0.52) 0%,
+    rgba(105, 131, 233, 0.34) 36%,
+    rgba(157, 88, 222, 0.2) 62%,
+    transparent 79%
+  );
+}
+
+.shared-oasis-scene__impact-ripple {
+  z-index: 1;
+  border: 1px solid rgba(176, 230, 255, 0.72);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(218, 248, 255, 0.7) 0%,
+    rgba(129, 176, 246, 0.34) 38%,
+    rgba(162, 108, 228, 0.14) 62%,
+    transparent 76%
+  );
+  box-shadow:
+    0 0 24px rgba(115, 205, 245, 0.44),
+    0 0 42px rgba(139, 100, 223, 0.22);
+  filter: blur(5px);
+  transform-origin: center;
+}
+
+.shared-oasis-scene__oasis {
+  position: absolute;
+  top: var(--oasis-center-y, 58%);
+  left: var(--oasis-center-x, 50%);
+  z-index: var(--oasis-layer-z, 100);
+  width: var(--oasis-size);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__oasis-image {
+  --oasis-asset-scale: 1;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  filter: drop-shadow(0 9px 8px rgba(68, 45, 22, 0.18));
+  transform: translate(-50%, -50%) scale(var(--oasis-asset-scale));
+  transition:
+    opacity 520ms ease-in-out,
+    transform 520ms ease-in-out;
+  will-change: opacity;
+}
+
+.shared-oasis-scene__oasis-image[data-oasis-layer="IN_PROGRESS"] {
+  --oasis-asset-scale: 1.04;
+}
+
+.shared-oasis-scene__oasis-image[data-oasis-layer="SHARED_SUCCESS"] {
+  --oasis-asset-scale: 0.97;
+}
+
+.shared-oasis-scene__oasis-image[data-oasis-layer="PERFECT_SUCCESS"] {
+  --oasis-asset-scale: 0.88;
+}
+
+.shared-oasis-scene__oasis-image--active {
+  opacity: 1;
+}
+
+.shared-oasis-scene__members {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.shared-oasis-scene__member {
+  position: absolute;
+  top: var(--member-y);
+  left: var(--member-x);
+  z-index: var(--member-z);
+  width: var(--member-size);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__member-cluster {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.shared-oasis-scene__island-stage {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.shared-oasis-scene__island-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(144, 238, 255, 0.6) 0%,
+    rgba(144, 238, 255, 0) 70%
+  );
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__island-status-ring {
+  position: absolute;
+  inset: 8%;
+  z-index: 0;
+  border: 2px solid var(--member-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--member-accent) 10%, transparent);
+  opacity: 0.18;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    opacity 220ms ease;
+}
+
+.shared-oasis-scene__island-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shared-oasis-scene__island-button:focus-visible {
+  outline: none;
+}
+
+.shared-oasis-scene__island-button:focus-visible
+  .shared-oasis-scene__island-status-ring {
+  border-color: #167c75;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.94),
+    0 0 0 6px rgba(22, 124, 117, 0.88);
+  opacity: 1;
+}
+
+.shared-oasis-scene__island-button:disabled {
+  cursor: wait;
+}
+
+.shared-oasis-scene__island {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 6px rgba(71, 49, 22, 0.18));
+  transition:
+    filter 220ms ease,
+    opacity 220ms ease;
+}
+
+.shared-oasis-scene__island-complete-mark {
+  position: absolute;
+  top: 11%;
+  right: 7%;
+  z-index: 4;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 2px solid rgba(255, 252, 225, 0.96);
+  border-radius: 50%;
+  background: #d9a72d;
+  box-shadow:
+    0 2px 5px rgba(91, 61, 8, 0.22),
+    0 0 9px rgba(255, 217, 89, 0.42);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shared-oasis-scene__member[data-depth="back"]
+  .shared-oasis-scene__island-complete-mark {
+  top: auto;
+  right: 7%;
+  bottom: 8%;
+}
+
+.shared-oasis-scene__member-chip {
+  --member-chip-y: 0%;
+
+  position: absolute;
+  top: 76%;
+  z-index: 5;
+  display: flex;
+  width: max-content;
+  max-width: 118px;
+  min-height: 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 42px;
+  border: 1.5px solid color-mix(in srgb, var(--member-accent) 58%, white);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow:
+    0 4px 11px rgba(72, 55, 39, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  color: #333d4b;
+  font-size: 8.5px;
+  line-height: 1.15;
+  white-space: nowrap;
+  backdrop-filter: blur(8px) saturate(1.08);
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease,
+    opacity 220ms ease;
+}
+
+.shared-oasis-scene__member-chip[data-label-side="left"] {
+  left: 7%;
+  transform: translateY(var(--member-chip-y));
+}
+
+.shared-oasis-scene__member-chip[data-label-side="right"] {
+  right: 7%;
+  flex-direction: row-reverse;
+  padding: 4px 42px 4px 8px;
+  transform: translateY(var(--member-chip-y));
+}
+
+.shared-oasis-scene__member-chip[data-label-side="center"] {
+  left: 50%;
+  transform: translate(-50%, var(--member-chip-y));
+}
+
+.shared-oasis-scene__member-chip[data-depth="back"] {
+  --member-chip-y: -100%;
+
+  top: 10%;
+}
+
+.shared-oasis-scene__member-avatar {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  z-index: 2;
+  display: block;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border: 2px solid var(--member-accent);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff, var(--member-accent-soft));
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.82),
+    0 1px 4px rgba(69, 52, 36, 0.2);
+  transform: translateY(-50%);
+}
+
+.shared-oasis-scene__member-chip[data-label-side="right"]
+  .shared-oasis-scene__member-avatar {
+  right: -8px;
+  left: auto;
+}
+
+.shared-oasis-scene__member-avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 36%;
+  transform: translateY(2px) scale(1.14);
+  transform-origin: 50% 38%;
+}
+
+.shared-oasis-scene__member-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.shared-oasis-scene__member-chip[data-label-side="right"]
+  .shared-oasis-scene__member-copy {
+  align-items: flex-end;
+}
+
+.shared-oasis-scene__member-name {
+  display: flex;
+  min-width: 0;
+  max-width: 72px;
+  align-items: center;
+  gap: 3px;
+  font-weight: 800;
+}
+
+.shared-oasis-scene__member-nickname {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shared-oasis-scene__member-me {
+  display: inline-grid;
+  flex: 0 0 auto;
+  min-width: 14px;
+  height: 13px;
+  place-items: center;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--member-accent-soft);
+  color: var(--member-accent-ink);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.shared-oasis-scene__member-drops {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  color: #168a8b;
+  font-weight: 700;
+}
+
+.shared-oasis-scene__member[data-member-status="pending"]
+  .shared-oasis-scene__island {
+  filter: grayscale(0.34) saturate(0.58) brightness(0.89)
+    drop-shadow(0 5px 5px rgba(71, 49, 22, 0.12));
+  opacity: 0.84;
+}
+
+.shared-oasis-scene__member[data-member-status="pending"]
+  .shared-oasis-scene__member-chip {
+  border-color: rgba(187, 181, 169, 0.82);
+  background: rgba(248, 245, 238, 0.9);
+  opacity: 0.86;
+}
+
+.shared-oasis-scene__member[data-member-status="participated"]
+  .shared-oasis-scene__island-status-ring {
+  border-color: #68cbbd;
+  box-shadow:
+    0 0 0 3px rgba(104, 203, 189, 0.14),
+    0 0 11px rgba(104, 203, 189, 0.34);
+  opacity: 0.82;
+}
+
+.shared-oasis-scene__member[data-member-status="participated"]
+  .shared-oasis-scene__member-chip {
+  border-color: rgba(104, 203, 189, 0.86);
+  background: rgba(241, 253, 249, 0.95);
+}
+
+.shared-oasis-scene__member[data-member-status="contributing"]
+  .shared-oasis-scene__island-status-ring {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--member-accent) 15%, transparent),
+    0 0 12px color-mix(in srgb, var(--member-accent) 30%, transparent);
+  opacity: 0.88;
+}
+
+.shared-oasis-scene__member[data-member-status="complete"]
+  .shared-oasis-scene__island-status-ring {
+  border-color: #e0b43f;
+  box-shadow:
+    0 0 0 3px rgba(255, 235, 162, 0.28),
+    0 0 14px rgba(224, 180, 63, 0.48);
+  opacity: 1;
+}
+
+.shared-oasis-scene__member[data-member-status="complete"]
+  .shared-oasis-scene__member-chip {
+  border-color: rgba(217, 174, 55, 0.88);
+  background: rgba(255, 250, 230, 0.96);
+}
+
+.shared-oasis-scene__member--active .shared-oasis-scene__island-status-ring {
+  border-color: #7be0ee;
+  box-shadow:
+    0 0 0 5px rgba(123, 224, 238, 0.2),
+    0 0 18px rgba(66, 189, 208, 0.62);
+  opacity: 1;
+  animation: member-ownership-pulse 0.72s ease-out;
+}
+
+.shared-oasis-scene__member--active .shared-oasis-scene__member-chip {
+  border-color: #63cbd4;
+  box-shadow:
+    0 0 0 3px rgba(99, 203, 212, 0.16),
+    0 5px 13px rgba(42, 134, 145, 0.2);
+}
+
+.shared-oasis-scene__water-drop-path {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 310;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.shared-oasis-scene__water-drop-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+}
+
+.shared-oasis-scene__water-drop {
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  display: block;
+  width: 12px;
+  height: 16px;
+  border: 1px solid rgba(230, 255, 255, 0.9);
+  border-radius: 70% 46% 64% 48%;
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      rgba(255, 255, 255, 0.96) 0 10%,
+      transparent 12%
+    ),
+    linear-gradient(145deg, #8eeeff, #319cca 72%);
+  box-shadow:
+    0 2px 5px rgba(24, 114, 159, 0.28),
+    0 0 10px rgba(126, 232, 240, 0.58);
+}
+
+@keyframes member-ownership-pulse {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.86);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__oasis-image,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__milestone-dot,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__milestone-dot img,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__progress-fill,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__background::after,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__bloom-aura,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__member-cluster,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-status-ring,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__member-chip,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__impact-ripple,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__water-drop-path {
+  transition: none;
+  animation: none;
+}
+
+@media (max-width: 340px) {
+  .shared-oasis-scene {
+    --oasis-size: 50%;
+    --member-size: 18%;
+
+    width: 100%;
+    border-radius: 24px;
+  }
+
+  .shared-oasis-scene__progress {
+    right: 13px;
+    left: 13px;
+  }
+
+  .shared-oasis-scene__member-chip {
+    max-width: 108px;
+    min-height: 27px;
+    gap: 3px;
+    padding: 3px 6px 3px 34px;
+    font-size: 7px;
+  }
+
+  .shared-oasis-scene__member-chip[data-label-side="right"] {
+    padding: 3px 34px 3px 6px;
+  }
+
+  .shared-oasis-scene__member-avatar {
+    left: -7px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .shared-oasis-scene__member-chip[data-label-side="right"]
+    .shared-oasis-scene__member-avatar {
+    right: -7px;
+    left: auto;
+  }
+
+  .shared-oasis-scene__island-complete-mark {
+    width: 17px;
+    height: 17px;
+    font-size: 9px;
+  }
+}
+
+@media (max-height: 680px) {
+  .shared-oasis-scene {
+    width: min(82vw, 320px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shared-oasis-scene__oasis-image,
+  .shared-oasis-scene__milestone-dot,
+  .shared-oasis-scene__milestone-dot img,
+  .shared-oasis-scene__progress-fill,
+  .shared-oasis-scene__background::after,
+  .shared-oasis-scene__bloom-aura,
+  .shared-oasis-scene__member-cluster,
+  .shared-oasis-scene__island-status-ring,
+  .shared-oasis-scene__island,
+  .shared-oasis-scene__member-chip,
+  .shared-oasis-scene__impact-ripple,
+  .shared-oasis-scene__water-drop-path {
+    transition: none;
+    animation: none;
+  }
+}

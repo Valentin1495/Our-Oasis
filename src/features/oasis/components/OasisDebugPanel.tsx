@@ -8,7 +8,15 @@ interface Props {
   previewPercent: number | null;
   reducedMotion: boolean;
   sceneVariant: OasisSceneVariant;
+  memberCount: number;
   onPreviewPercentChange: (percent: number) => void;
+  onMemberCountChange: (count: number) => void;
+  onSimulateContribution: (
+    origin: "local" | "remote",
+    drops: number,
+  ) => void;
+  onSimulateParticipation: () => void;
+  onSimulateThreshold: (threshold: 75 | 100) => void;
   onReducedMotionChange: (reducedMotion: boolean) => void;
   onSceneVariantChange: (variant: OasisSceneVariant) => void;
   onExitPreview: () => void;
@@ -19,7 +27,12 @@ export function OasisDebugPanel({
   previewPercent,
   reducedMotion,
   sceneVariant,
+  memberCount,
   onPreviewPercentChange,
+  onMemberCountChange,
+  onSimulateContribution,
+  onSimulateParticipation,
+  onSimulateThreshold,
   onReducedMotionChange,
   onSceneVariantChange,
   onExitPreview,
@@ -74,6 +87,57 @@ export function OasisDebugPanel({
               {percent}
             </button>
           ))}
+        </div>
+
+        <label className={styles.rangeLabel} htmlFor="oasis-preview-members">
+          <span>미리보기 멤버</span>
+          <output htmlFor="oasis-preview-members">{memberCount}명</output>
+        </label>
+        <input
+          id="oasis-preview-members"
+          className={styles.range}
+          type="range"
+          min="1"
+          max="5"
+          step="1"
+          value={memberCount}
+          onChange={(event) =>
+            onMemberCountChange(Number(event.currentTarget.value))
+          }
+        />
+
+        <fieldset className={styles.eventGroup}>
+          <legend>이벤트 시뮬레이션</legend>
+          <button
+            type="button"
+            onClick={() => onSimulateContribution("local", 1)}
+          >
+            내 물 +1
+          </button>
+          <button
+            type="button"
+            onClick={() => onSimulateContribution("remote", 1)}
+          >
+            친구 +1
+          </button>
+          <button
+            type="button"
+            onClick={() => onSimulateContribution("remote", 3)}
+          >
+            친구 +3
+          </button>
+          <button type="button" onClick={onSimulateParticipation}>
+            참여만
+          </button>
+        </fieldset>
+
+        <div className={styles.thresholdButtons}>
+          <button type="button" onClick={() => onSimulateThreshold(75)}>
+            75% 통과
+          </button>
+          <button type="button" onClick={() => onSimulateThreshold(100)}>
+            100% 통과
+          </button>
         </div>
 
         <label className={styles.option}>

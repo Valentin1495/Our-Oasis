@@ -1,0 +1,154 @@
+.list {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.item {
+  position: absolute;
+  top: var(--member-y);
+  left: var(--member-x);
+  display: flex;
+  align-items: center;
+  max-width: 104px;
+  min-height: 39px;
+  padding: 4px 7px 4px 4px;
+  border: 1.5px solid #c9c0b4;
+  border-radius: 21px;
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: 0 3px 9px rgba(78, 61, 34, 0.14);
+  color: #4e5968;
+  line-height: 1.15;
+  transform: translate(var(--member-translate-x), -50%);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #b9b3aa;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.copy {
+  min-width: 0;
+  margin-left: 5px;
+}
+
+.name,
+.drops {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  max-width: 59px;
+  color: #333d4b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.drops {
+  margin-top: 2px;
+  color: #6b7684;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.me {
+  display: inline-block;
+  margin-left: 3px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  background: #e5f6f2;
+  color: #278f87;
+  font-size: 7px;
+  vertical-align: 1px;
+}
+
+.participated {
+  border-color: #9edbd4;
+  background: rgba(240, 252, 249, 0.97);
+}
+
+.participated .avatar {
+  background: #8ac9bf;
+}
+
+.contributing {
+  border-color: #55b9ad;
+  background: rgba(233, 250, 246, 0.98);
+}
+
+.contributing .avatar {
+  background: #42aaa0;
+}
+
+.contributing .drops {
+  color: #258b84;
+}
+
+.complete {
+  border-color: #d5a936;
+  background: rgba(255, 249, 227, 0.98);
+}
+
+.complete .avatar {
+  background: #d1a439;
+}
+
+.complete .drops {
+  color: #9b7417;
+}
+
+.active {
+  animation: member-source-pulse 0.52s ease-out;
+}
+
+@keyframes member-source-pulse {
+  0%,
+  100% {
+    box-shadow: 0 3px 9px rgba(78, 61, 34, 0.14);
+    transform: translate(var(--member-translate-x), -50%) scale(1);
+  }
+  45% {
+    box-shadow:
+      0 0 0 7px rgba(77, 190, 178, 0.2),
+      0 5px 14px rgba(47, 143, 135, 0.2);
+    transform: translate(var(--member-translate-x), -50%) scale(1.08);
+  }
+}
+
+@media (max-width: 340px) {
+  .item {
+    max-width: 92px;
+    min-height: 35px;
+    padding: 3px 6px 3px 3px;
+  }
+
+  .avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .name {
+    max-width: 50px;
+  }
+}

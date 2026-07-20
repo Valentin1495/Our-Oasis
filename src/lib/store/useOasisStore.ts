@@ -43,9 +43,8 @@ interface OasisStore {
   waterLogFeedback: WaterLogFeedback | null;
   recentConfirmedWaterAt: number[];
 
-  // 애니메이션 트리거
-  dropAnimationTick: number;
-  personalRecordAnimationTick: number;
+  // 물 기록 결과 UI가 같은 payload에서도 다시 반응할 수 있게 하는 식별자
+  waterLogFeedbackId: number;
 
   // 실시간 구독 채널
   realtimeChannel: RealtimeChannel | null;
@@ -74,8 +73,7 @@ const initialState = {
   pendingUndo: null,
   waterLogFeedback: null,
   recentConfirmedWaterAt: [],
-  dropAnimationTick: 0,
-  personalRecordAnimationTick: 0,
+  waterLogFeedbackId: 0,
   realtimeChannel: null,
 };
 
@@ -298,14 +296,13 @@ export const useOasisStore = create<OasisStore>()(
             set({
               waterLogFeedback: feedback,
               recentConfirmedWaterAt,
-              dropAnimationTick: get().dropAnimationTick + 1,
+              waterLogFeedbackId: get().waterLogFeedbackId + 1,
             });
           } else {
             set({
               waterLogFeedback: feedback,
               recentConfirmedWaterAt,
-              personalRecordAnimationTick:
-                get().personalRecordAnimationTick + 1,
+              waterLogFeedbackId: get().waterLogFeedbackId + 1,
             });
           }
         } catch (e) {

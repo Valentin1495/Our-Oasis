@@ -4,7 +4,9 @@
   right: 12px;
   z-index: 1000;
   width: min(336px, calc(100vw - 24px));
-  overflow: hidden;
+  max-height: calc(100dvh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid #d1d6db;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.97);
@@ -83,6 +85,52 @@
   padding: 8px 10px 10px;
   border: 1px solid #e5e8eb;
   border-radius: 10px;
+}
+
+.eventGroup {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px 10px;
+  border: 1px solid #e5e8eb;
+  border-radius: 10px;
+}
+
+.eventGroup legend {
+  padding: 0 4px;
+  color: #6b7684;
+  font-size: 12px;
+}
+
+.eventGroup button {
+  min-height: 32px;
+  padding: 4px;
+  border: 1px solid #b8ded9;
+  border-radius: 8px;
+  background: #effaf8;
+  color: #087f78;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.thresholdButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.thresholdButtons button {
+  min-height: 34px;
+  border: 1px solid #d8bc64;
+  border-radius: 8px;
+  background: #fff9e8;
+  color: #8f6a0e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .variantGroup legend {

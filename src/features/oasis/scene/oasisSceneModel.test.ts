@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { deriveOasisSceneModel } from "./oasisSceneModel";
+import {
+  deriveOasisSceneModel,
+  getOasisPhaseTileIds,
+} from "./oasisSceneModel";
 
 describe("deriveOasisSceneModel", () => {
   it.each([
@@ -46,7 +49,7 @@ describe("deriveOasisSceneModel", () => {
       isCommunitySuccess: true,
       isPerfect: false,
       bloomState: "bud",
-      edgePlantLevel: 1,
+      edgePlantLevel: 2,
       bloomProgress: 0.55,
     });
   });
@@ -84,5 +87,42 @@ describe("deriveOasisSceneModel", () => {
       phase: "perfect",
       waterLevel: 1,
     });
+  });
+
+  it("단계별 SVG 타일을 누적하며 기존 타일 ID를 유지한다", () => {
+    const growing = deriveOasisSceneModel(25).visibleTileIds;
+    const thriving = deriveOasisSceneModel(50).visibleTileIds;
+    const success = deriveOasisSceneModel(75).visibleTileIds;
+
+    expect(growing).toEqual(
+      expect.arrayContaining([
+        ...getOasisPhaseTileIds("dry"),
+        ...getOasisPhaseTileIds("first-life"),
+        ...getOasisPhaseTileIds("growing"),
+      ]),
+    );
+    expect(thriving).toEqual(expect.arrayContaining(growing));
+    expect(success).toEqual(expect.arrayContaining(thriving));
+  });
+
+  it("75% 봉오리와 100% 연꽃 및 조명을 명확히 구분한다", () => {
+    const success = deriveOasisSceneModel(75);
+    const perfect = deriveOasisSceneModel(100);
+
+    expect(success).toMatchObject({
+      lighting: "success",
+      bloomState: "bud",
+      isPerfect: false,
+    });
+    expect(success.visibleTileIds).toContain("lotus-bud");
+    expect(success.visibleTileIds).not.toContain("lotus-flower");
+
+    expect(perfect).toMatchObject({
+      lighting: "perfect",
+      bloomState: "flower",
+      isPerfect: true,
+    });
+    expect(perfect.visibleTileIds).toContain("lotus-flower");
+    expect(perfect.visibleTileIds).not.toContain("lotus-bud");
   });
 });

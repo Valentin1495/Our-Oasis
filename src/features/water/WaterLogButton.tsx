@@ -21,18 +21,16 @@ export function WaterLogButton({
     logWaterCup,
     isLoggingWater,
     waterLogFeedback,
-    dropAnimationTick,
-    personalRecordAnimationTick,
+    waterLogFeedbackId,
   } = useOasisStore();
   const [showFeedback, setShowFeedback] = useState(false);
-  const feedbackTick = dropAnimationTick + personalRecordAnimationTick;
 
   useEffect(() => {
-    if (!waterLogFeedback || feedbackTick === 0) return;
+    if (!waterLogFeedback || waterLogFeedbackId === 0) return;
     setShowFeedback(true);
     const timerId = setTimeout(() => setShowFeedback(false), 4000);
     return () => clearTimeout(timerId);
-  }, [feedbackTick, waterLogFeedback]);
+  }, [waterLogFeedbackId, waterLogFeedback]);
 
   const drops = hydration?.contributionDrops ?? 0;
   const isContributionComplete = drops >= 4;
@@ -64,7 +62,7 @@ export function WaterLogButton({
         >
           {showFeedback && feedbackMessage ? (
             <div
-              key={feedbackTick}
+              key={waterLogFeedbackId}
               role="status"
               aria-live="polite"
               aria-atomic="true"

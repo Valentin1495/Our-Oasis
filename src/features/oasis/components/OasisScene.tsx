@@ -1,43 +1,84 @@
-import type { OasisStage } from "../../../types";
-import { SharedOasisScene } from "../scene/SharedOasisScene";
-import { LegacyOasisScene } from "./LegacyOasisScene";
+import { getOasisStage } from "../oasisRules";
 import { ConceptATerrarium } from "../scene/ConceptATerrarium";
 import { ConceptBWatercolor } from "../scene/ConceptBWatercolor";
+import {
+  SharedOasisScene,
+  type Member as SharedOasisMember,
+} from "../scene/SharedOasisScene";
+import type {
+  OasisSceneEvent,
+  OasisSceneSequencePhase,
+} from "../scene/oasisSceneEvents";
+import type { OasisSceneSnapshot } from "../scene/oasisSceneModel";
+import { assignMemberAvatarImages } from "../scene/shared/memberAvatarImage";
+import { getMemberIslandImage } from "../scene/shared/memberIslandImage";
+import { LegacyOasisScene } from "./LegacyOasisScene";
 
 export type OasisSceneVariant = "shared" | "legacy" | "concept-a" | "concept-b";
 
 interface Props {
-  stage: OasisStage;
-  sharedProgressPercent: number;
-  dropAnimationTick: number;
-  isFullComplete: boolean;
+  snapshot: OasisSceneSnapshot;
+  event?: OasisSceneEvent | null;
+  phase?: OasisSceneSequencePhase;
+  impactIndex?: number;
+  announcement?: string;
   showSpecialCharacter?: boolean;
   isFinalOasisUnlocked?: boolean;
   reducedMotion?: boolean;
   variant?: OasisSceneVariant;
+  isAnimating?: boolean;
+  isInteractionDisabled?: boolean;
+  onGiveWater?: () => void | Promise<void>;
+  onTravelComplete?: () => void;
+  onImpactComplete?: () => void;
+}
+
+function getSharedOasisMembers(
+  snapshot: OasisSceneSnapshot,
+): SharedOasisMember[] {
+  const avatarImages = assignMemberAvatarImages(
+    snapshot.members.map((member) => member.id),
+  );
+
+  return snapshot.members.map((member) => ({
+    id: member.id,
+    name: member.nickname,
+    drops: member.contributedDropsToday,
+    hasWaterRecordToday: member.hasWaterRecordToday,
+    islandImage: getMemberIslandImage(member.id),
+    avatarImage: avatarImages.get(member.id) ?? "",
+  }));
 }
 
 /**
- * 새 공유형 오아시스를 기본으로 렌더링하되, 개발 패널에서 기존 장면과
- * 즉시 비교할 수 있도록 동일한 public props를 유지하는 facade다.
+ * 공유형 장면을 기본으로 렌더링하고 개발 패널의 이전 컨셉 비교를 지원한다.
+ * shared 장면의 표시 퍼센트와 멤버 사실 상태를 PNG 표현 모델로 변환한다.
  */
 export function OasisScene({
-  stage,
-  sharedProgressPercent,
-  dropAnimationTick,
-  isFullComplete,
+  snapshot,
+  event = null,
+  phase = "idle",
+  impactIndex = 0,
+  announcement = "",
   showSpecialCharacter = false,
   isFinalOasisUnlocked = false,
   reducedMotion = false,
   variant = "shared",
+  isAnimating = false,
+  isInteractionDisabled = false,
+  onGiveWater,
+  onTravelComplete,
+  onImpactComplete,
 }: Props) {
+  const percent = snapshot.progress.displayPercent;
+
   if (variant === "legacy") {
     return (
       <LegacyOasisScene
-        stage={stage}
-        sharedProgressPercent={sharedProgressPercent}
-        dropAnimationTick={dropAnimationTick}
-        isFullComplete={isFullComplete}
+        stage={getOasisStage(percent)}
+        sharedProgressPercent={percent}
+        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
+        isFullComplete={snapshot.progress.isPerfect}
         showSpecialCharacter={showSpecialCharacter}
         isFinalOasisUnlocked={isFinalOasisUnlocked}
         reducedMotion={reducedMotion}
@@ -48,8 +89,8 @@ export function OasisScene({
   if (variant === "concept-a") {
     return (
       <ConceptATerrarium
-        percent={sharedProgressPercent}
-        dropAnimationTick={dropAnimationTick}
+        percent={percent}
+        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
         reducedMotion={reducedMotion}
       />
     );
@@ -58,8 +99,8 @@ export function OasisScene({
   if (variant === "concept-b") {
     return (
       <ConceptBWatercolor
-        percent={sharedProgressPercent}
-        dropAnimationTick={dropAnimationTick}
+        percent={percent}
+        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
         reducedMotion={reducedMotion}
       />
     );
@@ -67,9 +108,19 @@ export function OasisScene({
 
   return (
     <SharedOasisScene
-      percent={sharedProgressPercent}
-      dropAnimationTick={dropAnimationTick}
+      progressPercentage={percent}
+      members={getSharedOasisMembers(snapshot)}
+      announcement={announcement}
       reducedMotion={reducedMotion}
+      currentMemberId={snapshot.currentMemberId}
+      event={event}
+      phase={phase}
+      impactIndex={impactIndex}
+      isAnimating={isAnimating}
+      isInteractionDisabled={isInteractionDisabled}
+      onGiveWater={onGiveWater}
+      onTravelComplete={onTravelComplete}
+      onImpactComplete={onImpactComplete}
     />
   );
 }

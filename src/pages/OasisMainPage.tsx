@@ -1,6 +1,7 @@
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -16,11 +17,12 @@ import {
   DayResultModal,
   OasisDebugPanel,
   OasisScene,
-  ParticipantDrops,
+  createOasisSceneSnapshot,
   deriveOasisProgressMessage,
   getOasisAchievements,
-  getOasisStage,
   getTodayMaxDrops,
+  useOasisSceneController,
+  type OasisSceneMember,
   type OasisSceneVariant,
 } from "../features/oasis";
 import {
@@ -41,10 +43,11 @@ export function OasisMainPage() {
     isLoadingOasis,
     oasisError,
     memberId,
+    isLoggingWater,
     loadOasisState,
+    logWaterCup,
     subscribeToRoom,
     unsubscribeFromRoom,
-    dropAnimationTick,
   } = useOasisStore();
 
   const [showDayResult, setShowDayResult] = useState(false);
@@ -56,17 +59,15 @@ export function OasisMainPage() {
     useState(false);
   const [sceneVariant, setSceneVariant] =
     useState<OasisSceneVariant>("shared");
-  const [isSceneAnimating, setIsSceneAnimating] = useState(false);
+  const [scenePreviewMembers, setScenePreviewMembers] =
+    useState<OasisSceneMember[] | null>(null);
+  const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>("idle");
 
   const bottomCTARef = useRef<HTMLDivElement>(null);
   const inviteResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const sceneAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const lastAnimatedTickRef = useRef(0);
 
   useLayoutEffect(() => {
     const bottomCTA = bottomCTARef.current;
@@ -81,7 +82,7 @@ export function OasisMainPage() {
     resizeObserver.observe(bottomCTA);
 
     return () => resizeObserver.disconnect();
-  }, [oasisState, isSceneAnimating]);
+  }, [oasisState]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -95,42 +96,68 @@ export function OasisMainPage() {
   }, [roomId, subscribeToRoom, unsubscribeFromRoom]);
 
   useEffect(() => {
-    if (
-      dropAnimationTick === 0 ||
-      dropAnimationTick === lastAnimatedTickRef.current
-    ) {
-      return;
-    }
-    lastAnimatedTickRef.current = dropAnimationTick;
-
-    const prefersReducedMotion =
-      scenePreviewReducedMotion ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      setIsSceneAnimating(false);
-      return;
-    }
-
-    setIsSceneAnimating(true);
-    if (sceneAnimationTimerRef.current) {
-      clearTimeout(sceneAnimationTimerRef.current);
-    }
-    sceneAnimationTimerRef.current = setTimeout(
-      () => setIsSceneAnimating(false),
-      1200,
+    const mediaQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
     );
-  }, [dropAnimationTick, scenePreviewReducedMotion]);
+    const updatePreference = () =>
+      setSystemReducedMotion(mediaQuery.matches);
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+    return () =>
+      mediaQuery.removeEventListener("change", updatePreference);
+  }, []);
 
   useEffect(
     () => () => {
       if (inviteResetTimerRef.current) {
         clearTimeout(inviteResetTimerRef.current);
       }
-      if (sceneAnimationTimerRef.current) {
-        clearTimeout(sceneAnimationTimerRef.current);
-      }
     },
     [],
+  );
+
+  const isScenePreview =
+    import.meta.env.DEV && scenePreviewPercent !== null;
+  const targetSceneSnapshot = useMemo(() => {
+    if (!oasisState) return null;
+
+    const previewMembers = scenePreviewMembers ?? oasisState.members;
+    const maxDrops = isScenePreview
+      ? previewMembers.length * 4
+      : getTodayMaxDrops(oasisState);
+    const achievements = getOasisAchievements(oasisState);
+    const percent = isScenePreview
+      ? scenePreviewPercent
+      : oasisState.sharedProgressPercent;
+    const totalDrops = isScenePreview
+      ? Math.round((maxDrops * percent) / 100)
+      : oasisState.totalDrops;
+
+    return createOasisSceneSnapshot({
+      totalDrops,
+      maxDrops,
+      displayPercent: percent,
+      isCommunitySuccess: isScenePreview
+        ? percent >= 75
+        : achievements.isTodayComplete,
+      isPerfect: isScenePreview
+        ? percent >= 100
+        : achievements.isTodayFullComplete,
+      members: previewMembers,
+      currentMemberId: memberId,
+    });
+  }, [
+    isScenePreview,
+    memberId,
+    oasisState,
+    scenePreviewMembers,
+    scenePreviewPercent,
+  ]);
+  const effectiveReducedMotion =
+    scenePreviewReducedMotion || systemReducedMotion;
+  const sceneController = useOasisSceneController(
+    targetSceneSnapshot,
+    { reducedMotion: effectiveReducedMotion },
   );
 
   if (!roomId) return null;
@@ -159,27 +186,24 @@ export function OasisMainPage() {
     );
   }
 
-  const { room, members, sharedProgressPercent, totalDrops, stage } =
+  // oasisState가 있으면 위의 useMemo도 항상 snapshot을 만든다.
+  if (!targetSceneSnapshot) return null;
+
+  const { room, members, sharedProgressPercent } =
     oasisState;
   const daysLeft = Math.max(0, room.durationDays - room.dayIndex);
   const {
     allMembersParticipatedToday,
-    isTodayFullComplete,
     isFinalOasisUnlocked,
     isSpecialCharacterSettled,
   } = getOasisAchievements(oasisState);
-  const isScenePreview =
-    import.meta.env.DEV && scenePreviewPercent !== null;
-  const displayedScenePercent = isScenePreview
-    ? scenePreviewPercent
-    : sharedProgressPercent;
-  const displayedSceneStage = isScenePreview
-    ? getOasisStage(displayedScenePercent)
-    : stage;
+  const displayedSceneSnapshot =
+    sceneController.displayedSnapshot ?? targetSceneSnapshot;
+  const displayedScenePercent =
+    displayedSceneSnapshot.progress.displayPercent;
   const maxDrops = getTodayMaxDrops(oasisState);
-  const displayedTotalDrops = isScenePreview
-    ? Math.round((maxDrops * displayedScenePercent) / 100)
-    : totalDrops;
+  const displayedTotalDrops =
+    displayedSceneSnapshot.progress.totalDrops;
   const progressMessage = deriveOasisProgressMessage({
     percent: displayedScenePercent,
     totalDrops: displayedTotalDrops,
@@ -192,8 +216,164 @@ export function OasisMainPage() {
 
   const exitScenePreview = () => {
     setScenePreviewPercent(null);
+    setScenePreviewMembers(null);
     setScenePreviewReducedMotion(false);
     setSceneVariant("shared");
+  };
+
+  const getDebugMembers = (count: number): OasisSceneMember[] => {
+    const unsortedMembers =
+      scenePreviewMembers ?? targetSceneSnapshot.members;
+    const sourceMembers = [...unsortedMembers].sort((left, right) => {
+      if (left.id === targetSceneSnapshot.currentMemberId) return -1;
+      if (right.id === targetSceneSnapshot.currentMemberId) return 1;
+      return 0;
+    });
+    return Array.from({ length: count }, (_, index) => {
+      const existing = sourceMembers[index];
+      if (existing) return existing;
+      return {
+        id: `debug-member-${index + 1}`,
+        nickname: `친구${index + 1}`,
+        contributedDropsToday: 0,
+        hasWaterRecordToday: false,
+      };
+    });
+  };
+
+  const handlePreviewMemberCountChange = (count: number) => {
+    const membersForPreview = getDebugMembers(count);
+    const maxPreviewDrops = count * 4;
+    const totalPreviewDrops = Math.min(
+      maxPreviewDrops,
+      Math.round(
+        (displayedSceneSnapshot.progress.displayPercent / 100) *
+          maxPreviewDrops,
+      ),
+    );
+    setScenePreviewMembers(membersForPreview);
+    setScenePreviewPercent(
+      maxPreviewDrops > 0
+        ? (totalPreviewDrops / maxPreviewDrops) * 100
+        : 0,
+    );
+  };
+
+  const handlePreviewContribution = (
+    origin: "local" | "remote",
+    requestedDrops: number,
+  ) => {
+    const source = targetSceneSnapshot;
+    const currentMemberIndex = source.members.findIndex(
+      (member) => member.id === source.currentMemberId,
+    );
+    const remoteMemberIndex = source.members.findIndex(
+      (member) => member.id !== source.currentMemberId,
+    );
+    const actorIndex =
+      origin === "local"
+        ? Math.max(0, currentMemberIndex)
+        : remoteMemberIndex >= 0
+          ? remoteMemberIndex
+          : 0;
+    const actor = source.members[actorIndex];
+    if (!actor) return;
+
+    const addedDrops = Math.min(
+      requestedDrops,
+      4 - actor.contributedDropsToday,
+      source.progress.maxDrops - source.progress.totalDrops,
+    );
+    if (addedDrops <= 0) return;
+
+    const nextMembers = source.members.map((member, index) =>
+      index === actorIndex
+        ? {
+            ...member,
+            contributedDropsToday:
+              member.contributedDropsToday + addedDrops,
+            hasWaterRecordToday: true,
+          }
+        : member,
+    );
+    const nextTotal = source.progress.totalDrops + addedDrops;
+    setScenePreviewMembers(nextMembers);
+    setScenePreviewPercent(
+      source.progress.maxDrops > 0
+        ? (nextTotal / source.progress.maxDrops) * 100
+        : 0,
+    );
+  };
+
+  const handlePreviewParticipation = () => {
+    const source = targetSceneSnapshot;
+    const actorIndex = source.members.findIndex(
+      (member) =>
+        member.id !== source.currentMemberId &&
+        !member.hasWaterRecordToday,
+    );
+    if (actorIndex < 0) return;
+    setScenePreviewMembers(
+      source.members.map((member, index) =>
+        index === actorIndex
+          ? { ...member, hasWaterRecordToday: true }
+          : member,
+      ),
+    );
+    setScenePreviewPercent(source.progress.displayPercent);
+  };
+
+  const handlePreviewThreshold = (threshold: 75 | 100) => {
+    const sourceMembers = getDebugMembers(
+      Math.max(2, targetSceneSnapshot.members.length),
+    );
+    const maxPreviewDrops = sourceMembers.length * 4;
+    const targetDrops =
+      threshold === 75
+        ? Math.ceil(maxPreviewDrops * 0.75)
+        : maxPreviewDrops;
+    const beforeDrops = Math.max(0, targetDrops - 1);
+    let remaining = beforeDrops;
+    const beforeMembers = sourceMembers.map((member) => {
+      const contributedDropsToday = Math.min(4, remaining);
+      remaining -= contributedDropsToday;
+      return {
+        ...member,
+        contributedDropsToday,
+        hasWaterRecordToday:
+          member.hasWaterRecordToday || contributedDropsToday > 0,
+      };
+    });
+    const actorIndex = beforeMembers.findIndex(
+      (member) =>
+        member.id !== targetSceneSnapshot.currentMemberId &&
+        member.contributedDropsToday < 4,
+    );
+    const safeActorIndex =
+      actorIndex >= 0
+        ? actorIndex
+        : beforeMembers.findIndex(
+            (member) => member.contributedDropsToday < 4,
+          );
+
+    setScenePreviewMembers(beforeMembers);
+    setScenePreviewPercent((beforeDrops / maxPreviewDrops) * 100);
+
+    requestAnimationFrame(() => {
+      setScenePreviewMembers(
+        beforeMembers.map((member, index) =>
+          index === safeActorIndex
+            ? {
+                ...member,
+                contributedDropsToday:
+                  member.contributedDropsToday + 1,
+                hasWaterRecordToday: true,
+              }
+            : member,
+        ),
+      );
+      setScenePreviewPercent((targetDrops / maxPreviewDrops) * 100);
+    });
   };
 
   const handleInvite = async () => {
@@ -261,34 +441,27 @@ export function OasisMainPage() {
           aria-label="오늘의 공유 오아시스"
         >
           <OasisScene
-            stage={displayedSceneStage}
-            sharedProgressPercent={displayedScenePercent}
-            dropAnimationTick={isScenePreview ? 0 : dropAnimationTick}
-            isFullComplete={
-              isScenePreview
-                ? displayedScenePercent >= 100
-                : isTodayFullComplete
-            }
+            snapshot={displayedSceneSnapshot}
+            event={sceneController.activeEvent}
+            phase={sceneController.phase}
+            impactIndex={sceneController.impactIndex}
+            announcement={sceneController.announcement}
             showSpecialCharacter={
               !isScenePreview &&
               (allMembersParticipatedToday || isSpecialCharacterSettled)
             }
             isFinalOasisUnlocked={!isScenePreview && isFinalOasisUnlocked}
-            reducedMotion={scenePreviewReducedMotion}
+            reducedMotion={effectiveReducedMotion}
             variant={sceneVariant}
-          />
-
-          <ParticipantDrops
-            members={members}
-            currentMemberId={memberId}
+            isAnimating={sceneController.isAnimating}
+            isInteractionDisabled={isScenePreview || isLoggingWater}
+            onGiveWater={isScenePreview ? undefined : logWaterCup}
+            onTravelComplete={sceneController.completeTravel}
+            onImpactComplete={sceneController.completeImpact}
           />
         </section>
 
-        <section
-          className={styles.progressStatus}
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <section className={styles.progressStatus}>
           <div
             key={`${progressMessage.headline}-${progressMessage.detail ?? ""}`}
             className={styles.progressStatusContent}
@@ -349,7 +522,7 @@ export function OasisMainPage() {
       <div ref={bottomCTARef} className={styles.bottomCTA}>
         <WaterLogButton
           hydration={oasisState.myHydration}
-          isVisualFeedbackPlaying={isSceneAnimating}
+          isVisualFeedbackPlaying={sceneController.isAnimating}
         />
       </div>
 
@@ -368,7 +541,12 @@ export function OasisMainPage() {
           previewPercent={scenePreviewPercent}
           reducedMotion={scenePreviewReducedMotion}
           sceneVariant={sceneVariant}
+          memberCount={targetSceneSnapshot.members.length}
           onPreviewPercentChange={setScenePreviewPercent}
+          onMemberCountChange={handlePreviewMemberCountChange}
+          onSimulateContribution={handlePreviewContribution}
+          onSimulateParticipation={handlePreviewParticipation}
+          onSimulateThreshold={handlePreviewThreshold}
           onReducedMotionChange={setScenePreviewReducedMotion}
           onSceneVariantChange={setSceneVariant}
           onExitPreview={exitScenePreview}

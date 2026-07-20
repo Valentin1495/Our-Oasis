@@ -1,237 +1,343 @@
-import { type CSSProperties } from "react";
-import { deriveOasisSceneModel } from "./oasisSceneModel";
-import styles from "./SharedOasisScene.module.css";
+import type { CSSProperties } from "react";
+import { MotionConfig, motion } from "motion/react";
+import oasisDryImage from "./shared/assets/oasis_dry.png";
+import oasisLushImage from "./shared/assets/oasis_lush.png";
+import oasisMysticImage from "./shared/assets/oasis_mystic.png";
+import {
+  OASIS_SCENE_TIMING,
+  type OasisSceneEvent,
+  type OasisSceneSequencePhase,
+} from "./oasisSceneEvents";
+import {
+  getOasisStatus,
+  normalizeProgressPercentage,
+  type OasisStatus,
+} from "./oasisState";
+import { MemberIsland } from "./shared/MemberIsland";
+import {
+  getMemberOrbitPosition,
+  getWaterDropArc,
+  SHARED_OASIS_LAYOUT,
+} from "./sharedOasisSceneLayout";
+import "./SharedOasisScene.css";
 
-interface Props {
-  percent: number;
-  dropAnimationTick: number;
-  reducedMotion?: boolean;
+export interface Member {
+  id: string;
+  name: string;
+  drops: number;
+  hasWaterRecordToday: boolean;
+  islandImage: string;
+  avatarImage: string;
 }
 
-const PHASE_LABELS = {
-  dry: "작은 물웅덩이가 물을 기다리는 오아시스",
-  "first-life": "작은 연못에 친구들의 물이 모이고 있어요",
-  growing: "연못 가장자리에 작은 잎이 자랐어요",
-  thriving: "연못과 잎이 함께 자라고 있어요",
-  "community-success": "꽃봉오리가 자라는 완성된 오아시스",
-  perfect: "꽃이 활짝 핀 완벽한 오아시스",
-} as const;
+export interface SharedOasisSceneProps {
+  progressPercentage: number;
+  members: Member[];
+  reducedMotion?: boolean;
+  announcement?: string;
+  currentMemberId?: string | null;
+  event?: OasisSceneEvent | null;
+  phase?: OasisSceneSequencePhase;
+  impactIndex?: number;
+  isAnimating?: boolean;
+  isInteractionDisabled?: boolean;
+  onGiveWater?: () => void | Promise<void>;
+  onTravelComplete?: () => void;
+  onImpactComplete?: () => void;
+}
+
+const WATER_TRAVEL_DURATION_SECONDS = OASIS_SCENE_TIMING.travelDuration / 1000;
+const AURA_IMPACT_DURATION_SECONDS = OASIS_SCENE_TIMING.impactDuration / 1000;
+const BLOOM_BREATH_DURATION_SECONDS = 4.2;
+
+const OASIS_LAYERS: ReadonlyArray<{
+  status: OasisStatus;
+  image: string;
+}> = [
+  { status: "IN_PROGRESS", image: oasisDryImage },
+  { status: "SHARED_SUCCESS", image: oasisLushImage },
+  { status: "PERFECT_SUCCESS", image: oasisMysticImage },
+];
+
+const STATUS_LABELS: Record<OasisStatus, string> = {
+  IN_PROGRESS: "함께 물을 모으고 있는 오아시스",
+  SHARED_SUCCESS: "친구들과 완성한 풍성한 오아시스",
+  PERFECT_SUCCESS: "모두 함께 완벽하게 완성한 신비로운 오아시스",
+};
+
+const PROGRESS_MILESTONES = [
+  { percent: 0, label: "" },
+  { percent: 25, label: "" },
+  { percent: 50, label: "" },
+  { percent: 75, label: "공동 성공" },
+  { percent: 100, label: "완벽 성공" },
+] as const;
 
 export function SharedOasisScene({
-  percent,
-  dropAnimationTick,
+  progressPercentage,
+  members,
   reducedMotion = false,
-}: Props) {
-  const model = deriveOasisSceneModel(percent);
-  const pondScale = 0.2 + model.waterLevel * 0.8;
+  announcement = "",
+  currentMemberId = null,
+  event = null,
+  phase = "idle",
+  impactIndex = 0,
+  isAnimating = false,
+  isInteractionDisabled = false,
+  onGiveWater,
+  onTravelComplete,
+  onImpactComplete,
+}: SharedOasisSceneProps) {
+  const normalizedProgress = normalizeProgressPercentage(progressPercentage);
+  const status = getOasisStatus(normalizedProgress);
+  const roundedProgress = Math.round(normalizedProgress);
+  const dropActorMemberId =
+    event?.dropActorMemberIds[impactIndex] ?? event?.actorMemberId ?? null;
+  const dropActorIndex = members.findIndex(
+    (member) => member.id === dropActorMemberId,
+  );
+  const dropOrigin =
+    dropActorIndex >= 0
+      ? getMemberOrbitPosition(dropActorIndex, members.length)
+      : {
+          xPercent: SHARED_OASIS_LAYOUT.centerXPercent,
+          yPercent: SHARED_OASIS_LAYOUT.centerYPercent + 30,
+        };
+  const waterDropArc = getWaterDropArc(dropOrigin);
+  const interactionDisabled =
+    isInteractionDisabled || isAnimating || !onGiveWater;
 
   return (
-    <div
-      className={`${styles.scene} ${reducedMotion ? styles.reducedMotion : ""}`}
-      data-success={model.isCommunitySuccess}
-      data-perfect={model.isPerfect}
-      role="img"
-      aria-label={`${PHASE_LABELS[model.phase]}, 공동 달성률 ${Math.round(model.percent)}%`}
-    >
-      <svg
-        className={styles.svg}
-        viewBox="0 0 300 194"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
+    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
+      <section
+        className={`shared-oasis-scene ${
+          reducedMotion ? "shared-oasis-scene--reduced-motion" : ""
+        }`}
+        data-oasis-status={status}
+        data-reduced-motion={reducedMotion}
+        data-animation-phase={phase}
+        aria-busy={isAnimating}
+        aria-label={`${STATUS_LABELS[status]}, 공동 달성률 ${roundedProgress}%`}
+        style={
+          {
+            "--oasis-layer-z": SHARED_OASIS_LAYOUT.oasisZIndex,
+            "--oasis-center-x": `${SHARED_OASIS_LAYOUT.centerXPercent}%`,
+            "--oasis-center-y": `${SHARED_OASIS_LAYOUT.centerYPercent}%`,
+            "--scene-progress": `${normalizedProgress}%`,
+          } as CSSProperties
+        }
       >
-        <path
-          d="M20 104 C22 65 56 36 101 31 C140 18 194 29 229 53 C261 75 274 110 257 141 C239 170 198 181 158 176 C116 184 68 169 40 143 C25 131 18 117 20 104Z"
-          fill="#e8d5b6"
-          opacity="0.86"
-        />
+        <div className="shared-oasis-scene__background" aria-hidden="true" />
 
-        <g
-          className={styles.pondGrowth}
-          style={
-            {
-              "--pond-scale": pondScale,
-              opacity: 1,
-            } as CSSProperties
-          }
+        <div
+          className="shared-oasis-scene__progress"
+          aria-label={`공동 오아시스 진행률 ${roundedProgress}%`}
         >
-          <path
-            d="M42 102 C45 75 69 53 104 48 C134 37 174 43 202 58 C229 72 242 95 234 119 C226 143 198 157 166 155 C133 163 96 154 69 139 C51 129 39 115 42 102Z"
-            fill="#77c9c3"
-          />
+          <div
+            className="shared-oasis-scene__progress-track"
+            aria-hidden="true"
+          >
+            <span className="shared-oasis-scene__progress-fill" />
+          </div>
+          <ol className="shared-oasis-scene__milestones">
+            {PROGRESS_MILESTONES.map((milestone) => {
+              const isReached = normalizedProgress >= milestone.percent;
+              const isSharedMilestone = milestone.percent === 75;
+              const isPerfectMilestone = milestone.percent === 100;
 
-          {model.percent >= 50 && (
-            <path
-              className={styles.deepWater}
-              d="M80 104 C84 87 102 74 126 70 C148 64 177 70 194 82 C209 93 213 108 204 120 C193 134 170 139 148 136 C125 142 99 136 86 124 C79 118 77 110 80 104Z"
-              fill="#4ab3af"
-              opacity={0.16 + model.waterLevel * 0.14}
+              return (
+                <li
+                  key={milestone.percent}
+                  className={`shared-oasis-scene__milestone ${
+                    isReached ? "shared-oasis-scene__milestone--reached" : ""
+                  } ${
+                    isSharedMilestone
+                      ? "shared-oasis-scene__milestone--shared"
+                      : ""
+                  } ${
+                    isPerfectMilestone
+                      ? "shared-oasis-scene__milestone--perfect"
+                      : ""
+                  }`}
+                  data-progress-milestone={milestone.percent}
+                  data-reached={isReached}
+                >
+                  <span className="shared-oasis-scene__milestone-dot">
+                    {isSharedMilestone && (
+                      <svg
+                        className="shared-oasis-scene__share-mark"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M8.2 10.4 15.5 6M8.2 13.6l7.3 4.4" />
+                        <circle cx="6" cy="12" r="2.4" />
+                        <circle cx="17.8" cy="5" r="2.4" />
+                        <circle cx="17.8" cy="19" r="2.4" />
+                      </svg>
+                    )}
+                    {isPerfectMilestone && (
+                      <img src={oasisMysticImage} alt="" aria-hidden="true" />
+                    )}
+                  </span>
+                  <strong>{milestone.percent}%</strong>
+                  {milestone.label && <span>{milestone.label}</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        <div className="shared-oasis-scene__bloom-anchor" aria-hidden="true">
+          <motion.div
+            className="shared-oasis-scene__bloom-aura"
+            initial={false}
+            animate={
+              reducedMotion
+                ? { opacity: 0.7, scale: 1 }
+                : {
+                    opacity: [0.6, 0.8, 0.6],
+                    scale: [0.98, 1.02, 0.98],
+                  }
+            }
+            transition={
+              reducedMotion
+                ? { duration: 0 }
+                : {
+                    duration: BLOOM_BREATH_DURATION_SECONDS,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                  }
+            }
+          />
+          {phase === "impact" && event?.kind === "contribution" && (
+            <motion.div
+              key={`${event.id}-${impactIndex}`}
+              className="shared-oasis-scene__impact-ripple"
+              data-impact-index={impactIndex}
+              initial={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 0, scale: 1.3 }}
+              transition={{
+                duration: AURA_IMPACT_DURATION_SECONDS,
+                ease: "easeOut",
+              }}
+              onAnimationComplete={onImpactComplete}
             />
           )}
-        </g>
+        </div>
 
-        <path
-          d="M197 126 C205 115 223 112 236 120 C247 127 247 141 236 149 C224 158 203 155 195 145 C190 139 192 132 197 126Z"
-          fill="#e8d5b6"
-        />
+        <div className="shared-oasis-scene__oasis" aria-hidden="true">
+          {OASIS_LAYERS.map((layer) => {
+            const isActive = layer.status === status;
 
-        {model.edgePlantLevel > 0 && (
-          <EdgePlant
-            level={model.edgePlantLevel === 2 ? 2 : 1}
-            bloomState={model.bloomState}
-            bloomProgress={model.bloomProgress}
-          />
-        )}
-
-        {model.isPerfect && (
-          <g className={styles.perfectReveal}>
-            <g
-              fill="none"
-              stroke="#bde9e3"
-              strokeWidth="2.25"
-              strokeLinecap="round"
-              opacity="0.95"
-            >
-              <path d="M91 115 Q107 106 123 115" />
-            </g>
-            <g fill="#f2b985">
-              <Sparkle x={55} y={70} size={4.5} />
-              <Sparkle x={239} y={79} size={3.8} />
-            </g>
-          </g>
-        )}
-
-        {dropAnimationTick > 0 && (
-          <g key={dropAnimationTick}>
-            <g className={styles.dropFall}>
-              <path
-              d="M104 8 Q96 22 104 30 Q112 22 104 8Z"
-                fill="#4ab3af"
+            return (
+              <img
+                key={layer.status}
+                className={`shared-oasis-scene__oasis-image ${
+                  isActive ? "shared-oasis-scene__oasis-image--active" : ""
+                }`}
+                src={layer.image}
+                alt=""
+                data-oasis-layer={layer.status}
+                data-active={isActive}
               />
-            </g>
-            <ellipse
-              className={styles.impactRipple}
-              cx="104"
-              cy="105"
-              rx="6"
-              ry="3"
-              fill="none"
-              stroke="#d8f4ed"
-              strokeWidth="2"
-            />
-          </g>
-        )}
-      </svg>
+            );
+          })}
+        </div>
 
-      <p className={styles.percentLabel} aria-hidden="true">
-        오늘의 오아시스 · {Math.round(model.percent)}%
-      </p>
-    </div>
-  );
-}
-
-function EdgePlant({
-  level,
-  bloomState,
-  bloomProgress,
-}: {
-  level: 1 | 2;
-  bloomState: "none" | "bud" | "flower";
-  bloomProgress: number;
-}) {
-  return (
-    <g className={styles.plantReveal}>
-      <path
-        d="M219 145 Q215 127 220 108"
-        fill="none"
-        stroke="#789d7b"
-        strokeWidth="3.25"
-        strokeLinecap="round"
-      />
-      <ellipse
-        cx="210"
-        cy="129"
-        rx="10"
-        ry="5"
-        fill="#88a986"
-        transform="rotate(28 210 129)"
-      />
-      <ellipse
-        cx="226"
-        cy="120"
-        rx="10"
-        ry="5"
-        fill="#789d7b"
-        transform="rotate(-30 226 120)"
-      />
-
-      {level >= 2 && (
-        <>
-          <path
-            d="M214 141 Q201 132 196 119"
-            fill="none"
-            stroke="#86a684"
-            strokeWidth="2.75"
-            strokeLinecap="round"
-          />
-          <ellipse
-            cx="196"
-            cy="119"
-            rx="8"
-            ry="4"
-            fill="#94b08f"
-            transform="rotate(36 196 119)"
-          />
-        </>
-      )}
-
-      {bloomState === "bud" && (
-        <g
-          className={styles.budGrowth}
-          style={
-            {
-              "--bud-scale": bloomProgress,
-            } as CSSProperties
-          }
+        <ul
+          className="shared-oasis-scene__members"
+          aria-label="오늘 멤버 참여 상태"
         >
-          <path
-            d="M212 108 Q220 93 228 108 Q225 116 220 117 Q215 116 212 108Z"
-            fill="#e99079"
-          />
-        </g>
-      )}
+          {members.map((member, index) => {
+            const position = getMemberOrbitPosition(index, members.length);
 
-      {bloomState === "flower" && <Flower />}
-    </g>
-  );
-}
+            return (
+              <MemberIsland
+                key={member.id}
+                id={member.id}
+                name={member.name}
+                drops={member.drops}
+                hasWaterRecordToday={member.hasWaterRecordToday}
+                islandImage={member.islandImage}
+                avatarImage={member.avatarImage}
+                position={position}
+                index={index}
+                isCurrentMember={member.id === currentMemberId}
+                isSourceActive={
+                  event?.kind === "contribution" &&
+                  (phase === "source" || phase === "travel") &&
+                  dropActorMemberId === member.id
+                }
+                reducedMotion={reducedMotion}
+                interactionDisabled={interactionDisabled}
+                onGiveWater={onGiveWater}
+              />
+            );
+          })}
+        </ul>
 
-function Flower() {
-  return (
-    <g transform="translate(220 105)">
-      <g className={styles.flowerReveal}>
-        <ellipse cx="-7" cy="0" rx="7" ry="6" fill="#e99079" />
-        <ellipse cx="7" cy="0" rx="7" ry="6" fill="#e99079" />
-        <ellipse cx="0" cy="-7" rx="6" ry="7" fill="#efa087" />
-        <ellipse cx="0" cy="7" rx="6" ry="7" fill="#e78873" />
-        <circle r="4" fill="#f2b985" />
-      </g>
-    </g>
-  );
-}
+        {phase === "travel" && event?.kind === "contribution" && (
+          <motion.span
+            key={`${event.id}-${impactIndex}`}
+            className="shared-oasis-scene__water-drop-path"
+            data-actor-member-id={dropActorMemberId ?? ""}
+            data-drop-index={impactIndex}
+            data-path-left={waterDropArc.left.join(",")}
+            data-path-top={waterDropArc.top.join(",")}
+            initial={{
+              x: waterDropArc.left[0],
+              y: waterDropArc.top[0],
+              opacity: 0.65,
+            }}
+            animate={{
+              x: waterDropArc.left,
+              y: waterDropArc.top,
+              opacity: [0.65, 1, 1, 0.35],
+            }}
+            transition={{
+              x: {
+                duration: WATER_TRAVEL_DURATION_SECONDS,
+                ease: "linear",
+                times: [0, 0.48, 1],
+              },
+              y: {
+                duration: WATER_TRAVEL_DURATION_SECONDS,
+                ease: "easeInOut",
+                times: [0, 0.48, 1],
+              },
+              opacity: {
+                duration: WATER_TRAVEL_DURATION_SECONDS,
+                ease: "linear",
+                times: [0, 0.08, 0.9, 1],
+              },
+            }}
+            onAnimationComplete={onTravelComplete}
+            aria-hidden="true"
+          >
+            <span className="shared-oasis-scene__water-drop-anchor">
+              <motion.span
+                className="shared-oasis-scene__water-drop"
+                initial={{ rotate: 45, scale: 0.72 }}
+                animate={{ rotate: 45, scale: [0.72, 1.08, 0.8] }}
+                transition={{
+                  duration: WATER_TRAVEL_DURATION_SECONDS,
+                  ease: "easeInOut",
+                  times: [0, 0.48, 1],
+                }}
+              />
+            </span>
+          </motion.span>
+        )}
 
-function Sparkle({
-  x,
-  y,
-  size,
-}: {
-  x: number;
-  y: number;
-  size: number;
-}) {
-  const inner = size * 0.32;
-  return (
-    <path
-      d={`M${x} ${y - size} L${x + inner} ${y - inner} L${x + size} ${y} L${x + inner} ${y + inner} L${x} ${y + size} L${x - inner} ${y + inner} L${x - size} ${y} L${x - inner} ${y - inner}Z`}
-    />
+        <p
+          className="visually-hidden"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {announcement}
+        </p>
+      </section>
+    </MotionConfig>
   );
 }
