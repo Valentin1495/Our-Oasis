@@ -1,12 +1,14 @@
 .shared-oasis-scene {
-  --oasis-size: 58%;
-  --member-size: 22%;
+  --oasis-size: 66%;
+  --member-size: 25%;
   --member-label-offset: 10%;
 
   position: relative;
   isolation: isolate;
+  perspective: 900px;
+  perspective-origin: 50% 53%;
   width: 100%;
-  aspect-ratio: 360 / 520;
+  aspect-ratio: 360 / 620;
   margin: 0 auto;
   overflow: hidden;
   border: 0;
@@ -20,18 +22,77 @@
   background: transparent;
 }
 
+.shared-oasis-scene__background::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(
+      circle at 14% 18%,
+      rgba(255, 255, 230, 0.96) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 83% 16%,
+      rgba(255, 247, 210, 0.84) 0 1.2px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 33% 32%,
+      rgba(255, 255, 238, 0.86) 0 0.8px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 71% 36%,
+      rgba(255, 245, 202, 0.9) 0 1px,
+      transparent 2.2px
+    ),
+    radial-gradient(
+      circle at 18% 58%,
+      rgba(255, 255, 230, 0.78) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 88% 62%,
+      rgba(255, 249, 220, 0.9) 0 1px,
+      transparent 2.2px
+    ),
+    radial-gradient(
+      circle at 39% 76%,
+      rgba(255, 255, 238, 0.82) 0 1.2px,
+      transparent 2.5px
+    ),
+    radial-gradient(
+      circle at 68% 84%,
+      rgba(255, 244, 198, 0.84) 0 1px,
+      transparent 2px
+    );
+  content: "";
+  opacity: 0.72;
+  transform: translateY(0);
+  animation: scene-sparkle-drift 8s ease-in-out infinite;
+}
+
 .shared-oasis-scene__background::after {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 86% 4%, rgba(64, 55, 76, 0.54), transparent 30%),
     radial-gradient(
-      circle at 50% 58%,
-      rgba(255, 250, 219, 0.2),
+      circle at 50% 53%,
+      rgba(255, 250, 219, 0.42),
       transparent 45%
+    ),
+    radial-gradient(
+      ellipse 86% 36% at 50% 82%,
+      rgba(143, 87, 39, 0.12),
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse at center,
+      transparent 52%,
+      rgba(84, 54, 33, 0.15) 100%
     );
   content: "";
-  opacity: 0.28;
+  opacity: 0.72;
   transition: opacity 520ms ease;
 }
 
@@ -62,45 +123,48 @@
   pointer-events: none;
 }
 
-.shared-oasis-scene__connection-groove,
-.shared-oasis-scene__connection-water,
-.shared-oasis-scene__connection-perfect-highlight {
+.shared-oasis-scene__connection-glow,
+.shared-oasis-scene__connection-core,
+.shared-oasis-scene__connection-glint {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.shared-oasis-scene__connection-groove {
-  stroke: rgba(126, 83, 43, 0.13);
-  stroke-width: 2.2;
-  filter: drop-shadow(0 1px 0 rgba(255, 229, 186, 0.16));
+.shared-oasis-scene__connection-glow {
+  stroke: #fff0c9;
+  stroke-width: 5.5;
+  opacity: var(--connection-glow-opacity);
+  filter: blur(3px);
 }
 
-.shared-oasis-scene__connection-water {
-  stroke: rgba(42, 185, 187, var(--connection-opacity));
-  stroke-width: 3;
-  stroke-dasharray: 1;
+.shared-oasis-scene__connection-core {
+  stroke: #8ce8d9;
+  stroke-width: 1.45;
+  opacity: var(--connection-opacity);
+  filter: drop-shadow(0 0 1px rgba(232, 255, 250, 0.72))
+    drop-shadow(0 0 5px rgba(255, 226, 157, 0.42));
+}
+
+.shared-oasis-scene__connection-glint {
+  stroke: #fff9df;
+  stroke-width: 1.8;
+  stroke-dasharray: 0.018 0.16;
   stroke-dashoffset: 0;
-  filter:
-    drop-shadow(0 1px 0 rgba(224, 255, 247, 0.32))
-    drop-shadow(0 0 3px rgba(80, 216, 211, 0.42));
-  animation: connection-water-reveal 520ms ease-out both;
-}
-
-.shared-oasis-scene__connection-perfect-highlight {
-  stroke: rgba(255, 220, 128, 0);
-  stroke-width: 0.9;
-  stroke-dasharray: 1;
+  opacity: var(--connection-glint-opacity);
+  animation: connection-glint-flow var(--connection-duration) linear
+    var(--connection-delay) infinite;
   transition:
-    stroke 520ms ease,
+    opacity 520ms ease,
     filter 520ms ease;
 }
 
 .shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
-  .shared-oasis-scene__connection-perfect-highlight {
-  stroke: rgba(255, 224, 143, 0.78);
-  filter: drop-shadow(0 0 2px rgba(255, 211, 104, 0.46));
+  .shared-oasis-scene__connection-glint {
+  stroke: #ffe7a0;
+  opacity: var(--connection-opacity);
+  filter: drop-shadow(0 0 2px rgba(255, 211, 104, 0.42));
 }
 
 .shared-oasis-scene__progress-track {
@@ -392,17 +456,23 @@
 }
 
 .shared-oasis-scene__oasis::before {
-  bottom: 5%;
-  width: 86%;
-  height: 20%;
-  background: rgba(91, 58, 28, 0.2);
-  filter: blur(9px);
+  bottom: -7%;
+  left: 54%;
+  width: 74%;
+  height: 14%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(104, 67, 32, 0.3) 0%,
+    rgba(155, 99, 47, 0.14) 42%,
+    transparent 74%
+  );
+  filter: blur(12px);
 }
 
 .shared-oasis-scene__oasis::after {
-  bottom: 1%;
-  width: 106%;
-  height: 29%;
+  bottom: -1%;
+  width: 116%;
+  height: 34%;
   background: radial-gradient(
     ellipse at center,
     rgba(76, 194, 189, 0.2) 0%,
@@ -413,6 +483,36 @@
   transition:
     background 520ms ease,
     opacity 520ms ease;
+}
+
+.shared-oasis-scene__oasis-mirage {
+  position: absolute;
+  bottom: -11%;
+  left: 50%;
+  z-index: 0;
+  display: block;
+  width: 78%;
+  height: 34%;
+  background:
+    repeating-linear-gradient(
+      96deg,
+      transparent 0 9%,
+      rgba(255, 253, 224, 0.32) 12%,
+      rgba(164, 231, 217, 0.18) 15%,
+      transparent 20% 29%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 251, 224, 0.5),
+      rgba(190, 232, 213, 0.2) 46%,
+      transparent 92%
+    );
+  clip-path: polygon(8% 0, 94% 0, 78% 100%, 24% 100%);
+  filter: blur(2.6px);
+  opacity: 0.52;
+  transform: translateX(-50%) scaleX(0.94);
+  transform-origin: center top;
+  animation: oasis-mirage-breathe 7.2s ease-in-out infinite;
 }
 
 .shared-oasis-scene[data-oasis-status="SHARED_SUCCESS"]
@@ -443,7 +543,9 @@
   height: 100%;
   object-fit: contain;
   opacity: 0;
-  filter: saturate(0.98) drop-shadow(0 8px 7px rgba(68, 45, 22, 0.16));
+  filter: saturate(1.02) brightness(1.02)
+    drop-shadow(5px 9px 8px rgba(68, 45, 22, 0.14))
+    drop-shadow(0 0 10px rgba(255, 241, 195, 0.18));
   transform: translate(-50%, -50%) scale(var(--oasis-asset-scale));
   transition:
     opacity 520ms ease-in-out,
@@ -456,11 +558,11 @@
 }
 
 .shared-oasis-scene__oasis-image[data-oasis-layer="SHARED_SUCCESS"] {
-  --oasis-asset-scale: 0.97;
+  --oasis-asset-scale: 1;
 }
 
 .shared-oasis-scene__oasis-image[data-oasis-layer="PERFECT_SUCCESS"] {
-  --oasis-asset-scale: 0.88;
+  --oasis-asset-scale: 0.95;
 }
 
 .shared-oasis-scene__oasis-image--active {
@@ -494,13 +596,175 @@
   height: 100%;
   color: inherit;
   transform-origin: center;
+}
+
+.shared-oasis-scene__island-ground,
+.shared-oasis-scene__island-lift,
+.shared-oasis-scene__island-float {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.shared-oasis-scene__island-ground {
+  z-index: 0;
+  transform: scale(var(--member-depth-scale));
+  transform-origin: 50% 82%;
+  pointer-events: none;
+}
+
+.shared-oasis-scene__island-lift {
+  z-index: 2;
+  transform: translateY(calc(0px - var(--member-lift)))
+    scale(var(--member-depth-scale));
+  transform-origin: 50% 82%;
+  pointer-events: none;
+}
+
+.shared-oasis-scene__island-float {
+  z-index: 2;
+  animation: member-island-float var(--member-float-duration) ease-in-out
+    var(--member-float-delay) infinite;
+  transform-origin: center;
   will-change: transform;
+  pointer-events: none;
 }
 
 .shared-oasis-scene__island-stage {
   position: absolute;
   inset: 0;
   display: block;
+}
+
+.shared-oasis-scene__island-shadow {
+  position: absolute;
+  top: 94%;
+  left: 57%;
+  width: 58%;
+  height: 13%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(83, 54, 34, 0.78) 0%,
+    rgba(104, 68, 39, 0.4) 42%,
+    rgba(134, 91, 52, 0.12) 68%,
+    transparent 82%
+  );
+  filter: blur(var(--member-shadow-blur));
+  opacity: var(--member-shadow-opacity);
+  transform: translate(-50%, -50%)
+    scale(var(--member-shadow-scale-x), var(--member-shadow-scale-y));
+  transform-origin: center;
+}
+
+.shared-oasis-scene__island-haze {
+  position: absolute;
+  top: 79%;
+  left: 50%;
+  z-index: 1;
+  width: 70%;
+  height: 11%;
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 8%,
+      rgba(255, 253, 236, 0.72) 44%,
+      rgba(244, 211, 158, 0.28) 62%,
+      transparent 88%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 247, 219, 0.38),
+      rgba(236, 194, 132, 0.12) 54%,
+      transparent 76%
+    );
+  filter: blur(7px) opacity(var(--member-depth-opacity));
+  opacity: var(--member-haze-opacity);
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: mirage-haze-shimmer var(--member-haze-duration) ease-in-out
+    var(--member-float-delay) infinite;
+}
+
+.shared-oasis-scene__island-mirage-tail {
+  position: absolute;
+  top: 72%;
+  left: 50%;
+  z-index: 0;
+  display: block;
+  width: 68%;
+  height: 42%;
+  background:
+    repeating-linear-gradient(
+      98deg,
+      transparent 0 8%,
+      rgba(255, 255, 232, 0.5) 11%,
+      rgba(177, 233, 219, 0.22) 14%,
+      transparent 19% 28%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 252, 221, 0.62),
+      rgba(203, 237, 219, 0.22) 48%,
+      transparent 94%
+    );
+  clip-path: polygon(5% 0, 96% 0, 78% 100%, 23% 100%);
+  filter: blur(1.8px) opacity(var(--member-depth-opacity));
+  opacity: var(--member-mirage-tail-opacity);
+  transform: translateX(-50%) scaleX(0.94);
+  transform-origin: center top;
+  animation: member-mirage-tail var(--member-haze-duration) ease-in-out
+    var(--member-float-delay) infinite;
+}
+
+.shared-oasis-scene__island-mirage-tail::after {
+  position: absolute;
+  inset: 4% 6% 0;
+  background-image:
+    radial-gradient(
+      circle at 18% 20%,
+      rgba(255, 255, 231, 0.92) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 72% 42%,
+      rgba(255, 248, 207, 0.86) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 42% 68%,
+      rgba(219, 255, 236, 0.8) 0 0.8px,
+      transparent 1.8px
+    );
+  content: "";
+}
+
+.shared-oasis-scene__island-haze::after {
+  position: absolute;
+  inset: 38% 10% auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 241, 0.66),
+    transparent
+  );
+  content: "";
+  filter: blur(0.6px);
+}
+
+.shared-oasis-scene__island-focus-halo {
+  position: absolute;
+  inset: 7%;
+  z-index: 5;
+  border: 2px solid transparent;
+  border-radius: 46%;
+  opacity: 0;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
 }
 
 .shared-oasis-scene__island-ripple {
@@ -520,31 +784,6 @@
   pointer-events: none;
 }
 
-.shared-oasis-scene__island-status-ring {
-  position: absolute;
-  top: 63%;
-  right: 5%;
-  bottom: auto;
-  left: 5%;
-  z-index: 0;
-  height: 25%;
-  border: 1px solid rgba(119, 82, 47, 0.16);
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(117, 78, 42, 0.12),
-    rgba(117, 78, 42, 0.04) 52%,
-    transparent 72%
-  );
-  box-shadow: 0 3px 5px rgba(84, 55, 28, 0.08);
-  opacity: 0.7;
-  transition:
-    background 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    opacity 220ms ease;
-}
-
 .shared-oasis-scene__island-button {
   padding: 0;
   border: 0;
@@ -561,7 +800,7 @@
 }
 
 .shared-oasis-scene__island-button:focus-visible
-  .shared-oasis-scene__island-status-ring {
+  .shared-oasis-scene__island-focus-halo {
   border-color: #167c75;
   box-shadow:
     0 0 0 3px rgba(255, 255, 255, 0.94),
@@ -580,8 +819,11 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: saturate(0.86) contrast(0.96) sepia(0.04)
-    drop-shadow(0 6px 6px rgba(71, 49, 22, 0.16));
+  filter: saturate(var(--member-saturation))
+    brightness(var(--member-brightness))
+    brightness(var(--member-depth-brightness)) contrast(0.98) sepia(0.06)
+    opacity(var(--member-depth-opacity));
+  opacity: var(--member-island-opacity);
   transition:
     filter 220ms ease,
     opacity 220ms ease;
@@ -589,40 +831,32 @@
 
 .shared-oasis-scene__island-complete-mark {
   position: absolute;
-  top: -6px;
-  right: 7%;
-  z-index: 4;
+  top: 54%;
+  right: 0;
+  z-index: 6;
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   place-items: center;
   border: 2px solid rgba(255, 252, 225, 0.96);
   border-radius: 50%;
   background: #d9a72d;
-  box-shadow:
-    0 2px 5px rgba(91, 61, 8, 0.22),
-    0 0 9px rgba(255, 217, 89, 0.42);
+  box-shadow: 0 0 8px rgba(255, 217, 89, 0.4);
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   line-height: 1;
-}
-
-.shared-oasis-scene__member[data-depth="back"]
-  .shared-oasis-scene__island-complete-mark {
-  top: auto;
-  right: 7%;
-  bottom: -6px;
+  animation: island-complete-reveal 360ms cubic-bezier(0.22, 0.82, 0.32, 1) both;
 }
 
 .shared-oasis-scene__member-connector {
   position: absolute;
-  top: 100%;
+  top: 86%;
   left: 50%;
   z-index: 4;
   display: block;
   width: 2px;
-  height: 12px;
+  height: 18px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--member-accent) 72%, white);
   box-shadow: 0 1px 4px
@@ -661,23 +895,23 @@
   --member-chip-y: 0%;
 
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(86% + 18px);
   z-index: 5;
   display: flex;
   width: max-content;
-  max-width: 104px;
-  min-height: 26px;
+  max-width: 118px;
+  min-height: 30px;
   align-items: center;
   gap: 4px;
-  padding: 3px 7px 3px 35px;
-  border: 1px solid color-mix(in srgb, var(--member-accent) 42%, white);
+  padding: 4px 9px 4px 41px;
+  border: 1.5px solid color-mix(in srgb, var(--member-accent) 48%, white);
   border-radius: 999px;
   background: rgba(255, 253, 248, 0.94);
   box-shadow:
     0 4px 11px rgba(72, 55, 39, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
   color: #333d4b;
-  font-size: 7.5px;
+  font-size: 9px;
   line-height: 1.15;
   white-space: nowrap;
   backdrop-filter: blur(8px) saturate(1.08);
@@ -696,7 +930,7 @@
 .shared-oasis-scene__member-chip[data-label-side="right"] {
   right: 7%;
   flex-direction: row-reverse;
-  padding: 3px 35px 3px 7px;
+  padding: 4px 41px 4px 9px;
   transform: translateY(var(--member-chip-y));
 }
 
@@ -708,31 +942,31 @@
 .shared-oasis-scene__member-chip[data-depth="back"] {
   --member-chip-y: -100%;
 
-  top: -12px;
+  top: -18px;
 }
 
 .shared-oasis-scene__member-avatar {
   position: absolute;
   top: 50%;
-  left: -6px;
+  left: -7px;
   z-index: 2;
   display: block;
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   overflow: hidden;
-  border: 1.5px solid color-mix(in srgb, var(--member-accent) 78%, white);
+  border: 2px solid color-mix(in srgb, var(--member-accent) 78%, white);
   border-radius: 50%;
   background: linear-gradient(145deg, #fff, var(--member-accent-soft));
   box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.82),
-    0 1px 4px rgba(69, 52, 36, 0.2);
+    0 0 0 3px rgba(255, 255, 255, 0.86),
+    0 3px 9px rgba(69, 52, 36, 0.18);
   transform: translateY(-50%);
 }
 
 .shared-oasis-scene__member-chip[data-label-side="right"]
   .shared-oasis-scene__member-avatar {
-  right: -6px;
+  right: -7px;
   left: auto;
 }
 
@@ -799,9 +1033,8 @@
 
 .shared-oasis-scene__member[data-member-status="pending"]
   .shared-oasis-scene__island {
-  filter: grayscale(0.34) saturate(0.52) brightness(0.89)
-    drop-shadow(0 5px 5px rgba(71, 49, 22, 0.12));
-  opacity: 0.84;
+  filter: saturate(var(--member-saturation))
+    brightness(var(--member-brightness)) contrast(0.96) sepia(0.1);
 }
 
 .shared-oasis-scene__member[data-member-status="pending"]
@@ -812,52 +1045,9 @@
 }
 
 .shared-oasis-scene__member[data-member-status="participated"]
-  .shared-oasis-scene__island-status-ring {
-  border-color: rgba(105, 135, 116, 0.2);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(105, 135, 116, 0.13),
-    rgba(117, 78, 42, 0.03) 55%,
-    transparent 74%
-  );
-  box-shadow: 0 3px 5px rgba(72, 73, 46, 0.08);
-  opacity: 0.74;
-}
-
-.shared-oasis-scene__member[data-member-status="participated"]
   .shared-oasis-scene__member-chip {
   border-color: rgba(104, 203, 189, 0.86);
   background: rgba(241, 253, 249, 0.95);
-}
-
-.shared-oasis-scene__member[data-member-status="contributing"]
-  .shared-oasis-scene__island-status-ring {
-  border-color: rgba(64, 185, 181, 0.34);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(63, 194, 188, 0.26),
-    rgba(63, 194, 188, 0.08) 52%,
-    transparent 74%
-  );
-  box-shadow:
-    0 2px 6px rgba(40, 125, 119, 0.14),
-    0 0 10px rgba(91, 211, 202, 0.16);
-  opacity: 0.9;
-}
-
-.shared-oasis-scene__member[data-member-status="complete"]
-  .shared-oasis-scene__island-status-ring {
-  border-color: rgba(64, 185, 181, 0.42);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(63, 194, 188, 0.3),
-    rgba(63, 194, 188, 0.1) 52%,
-    transparent 74%
-  );
-  box-shadow:
-    0 2px 6px rgba(40, 125, 119, 0.16),
-    0 0 12px rgba(91, 211, 202, 0.2);
-  opacity: 1;
 }
 
 .shared-oasis-scene__member[data-member-status="complete"]
@@ -866,13 +1056,8 @@
   background: rgba(255, 250, 230, 0.96);
 }
 
-.shared-oasis-scene__member--active .shared-oasis-scene__island-status-ring {
-  border-color: #7be0ee;
-  box-shadow:
-    0 0 0 5px rgba(123, 224, 238, 0.2),
-    0 0 18px rgba(66, 189, 208, 0.62);
-  opacity: 1;
-  animation: member-ownership-pulse 0.72s ease-out;
+.shared-oasis-scene__member--active .shared-oasis-scene__island-haze {
+  filter: blur(7px) drop-shadow(0 0 5px rgba(126, 232, 224, 0.28));
 }
 
 .shared-oasis-scene__member--active .shared-oasis-scene__member-chip {
@@ -932,29 +1117,74 @@
     0 0 10px rgba(126, 232, 240, 0.58);
 }
 
-@keyframes member-ownership-pulse {
-  0% {
-    opacity: 0.45;
-    transform: scale(0.86);
-  }
-  55% {
-    opacity: 1;
-    transform: scale(1.04);
-  }
+@keyframes mirage-haze-shimmer {
+  0%,
   100% {
-    opacity: 1;
-    transform: scale(1);
+    transform: translate(-50%, -50%) translateX(-1.5px) scaleX(0.96);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateX(1.5px) scaleX(1.04);
   }
 }
 
-@keyframes connection-water-reveal {
+@keyframes scene-sparkle-drift {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translateY(2px);
+  }
+  50% {
+    opacity: 0.86;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes oasis-mirage-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: translateX(-50%) scaleX(0.92) scaleY(0.96);
+  }
+  50% {
+    opacity: 0.58;
+    transform: translateX(-50%) scaleX(1.02) scaleY(1.04);
+  }
+}
+
+@keyframes member-mirage-tail {
+  0%,
+  100% {
+    transform: translateX(-50%) skewX(-1deg) scaleX(0.92) scaleY(0.96);
+  }
+  50% {
+    transform: translateX(-50%) skewX(1deg) scaleX(1.03) scaleY(1.04);
+  }
+}
+
+@keyframes member-island-float {
+  0%,
+  100% {
+    transform: translateY(calc(0px - var(--member-float-amount)));
+  }
+  50% {
+    transform: translateY(var(--member-float-amount));
+  }
+}
+
+@keyframes connection-glint-flow {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes island-complete-reveal {
   from {
     opacity: 0;
-    stroke-dashoffset: 1;
+    transform: scale(0.72);
   }
   to {
     opacity: 1;
-    stroke-dashoffset: 0;
+    transform: scale(1);
   }
 }
 
@@ -962,11 +1192,16 @@
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__milestone-dot,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__milestone-dot img,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__progress-fill,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__background::before,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__background::after,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__bloom-aura,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__member-cluster,
-.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-status-ring,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-float,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-haze,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-mirage-tail,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-focus-halo,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__island,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__island-complete-mark,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__member-connector,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__member-chip,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__impact-ripple,
@@ -975,9 +1210,9 @@
   animation: none;
 }
 
-.shared-oasis-scene--reduced-motion .shared-oasis-scene__connection-water,
-.shared-oasis-scene--reduced-motion
-  .shared-oasis-scene__connection-perfect-highlight,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__connection-glint,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__connection-core,
+.shared-oasis-scene--reduced-motion .shared-oasis-scene__oasis-mirage,
 .shared-oasis-scene--reduced-motion .shared-oasis-scene__oasis::after {
   transition: none;
   animation: none;
@@ -985,8 +1220,8 @@
 
 @media (max-width: 340px) {
   .shared-oasis-scene {
-    --oasis-size: 56%;
-    --member-size: 20%;
+    --oasis-size: 64%;
+    --member-size: 24%;
 
     width: 100%;
   }
@@ -997,26 +1232,26 @@
   }
 
   .shared-oasis-scene__member-chip {
-    max-width: 94px;
-    min-height: 24px;
+    max-width: 108px;
+    min-height: 28px;
     gap: 3px;
-    padding: 3px 6px 3px 30px;
-    font-size: 6.5px;
+    padding: 3px 7px 3px 37px;
+    font-size: 8px;
   }
 
   .shared-oasis-scene__member-chip[data-label-side="right"] {
-    padding: 3px 30px 3px 6px;
+    padding: 3px 37px 3px 7px;
   }
 
   .shared-oasis-scene__member-avatar {
-    left: -5px;
-    width: 34px;
-    height: 34px;
+    left: -6px;
+    width: 42px;
+    height: 42px;
   }
 
   .shared-oasis-scene__member-chip[data-label-side="right"]
     .shared-oasis-scene__member-avatar {
-    right: -5px;
+    right: -6px;
     left: auto;
   }
 
@@ -1032,11 +1267,16 @@
   .shared-oasis-scene__milestone-dot,
   .shared-oasis-scene__milestone-dot img,
   .shared-oasis-scene__progress-fill,
+  .shared-oasis-scene__background::before,
   .shared-oasis-scene__background::after,
   .shared-oasis-scene__bloom-aura,
   .shared-oasis-scene__member-cluster,
-  .shared-oasis-scene__island-status-ring,
+  .shared-oasis-scene__island-float,
+  .shared-oasis-scene__island-haze,
+  .shared-oasis-scene__island-mirage-tail,
+  .shared-oasis-scene__island-focus-halo,
   .shared-oasis-scene__island,
+  .shared-oasis-scene__island-complete-mark,
   .shared-oasis-scene__member-connector,
   .shared-oasis-scene__member-chip,
   .shared-oasis-scene__impact-ripple,
@@ -1045,8 +1285,9 @@
     animation: none;
   }
 
-  .shared-oasis-scene__connection-water,
-  .shared-oasis-scene__connection-perfect-highlight,
+  .shared-oasis-scene__connection-glint,
+  .shared-oasis-scene__connection-core,
+  .shared-oasis-scene__oasis-mirage,
   .shared-oasis-scene__oasis::after {
     transition: none;
     animation: none;

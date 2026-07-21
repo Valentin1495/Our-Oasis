@@ -162,7 +162,9 @@ describe("SharedOasisScene", () => {
         const position = getMemberOrbitPosition(index, memberCount);
         const connection = getMemberConnectionPath(position);
 
-        expect(connection.d).toMatch(/^M [\d.]+ [\d.]+ Q [\d.]+ [\d.]+ [\d.]+ [\d.]+$/);
+        expect(connection.d).toMatch(
+          /^M [\d.]+ [\d.]+ C [\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+$/,
+        );
         expect(connection.start.xPercent).toBeGreaterThanOrEqual(0);
         expect(connection.start.xPercent).toBeLessThanOrEqual(100);
         expect(connection.start.yPercent).toBeGreaterThanOrEqual(0);
@@ -201,7 +203,7 @@ describe("SharedOasisScene", () => {
     },
   );
 
-  it("앞쪽 섬을 중앙 오아시스와 뒤쪽 섬보다 높게 쌓는다", () => {
+  it("중앙 오아시스를 기준으로 뒤 섬은 가리고 앞 섬은 겹쳐 쌓는다", () => {
     const back = getMemberOrbitPosition(0, 2);
     const front = getMemberOrbitPosition(1, 2);
 
@@ -209,9 +211,12 @@ describe("SharedOasisScene", () => {
     expect(back.yPercent).toBeLessThan(SHARED_OASIS_LAYOUT.centerYPercent);
     expect(front.depth).toBe("front");
     expect(back.depth).toBe("back");
-    expect(front.zIndex).toBeGreaterThan(SHARED_OASIS_LAYOUT.oasisZIndex);
     expect(back.zIndex).toBeLessThan(SHARED_OASIS_LAYOUT.oasisZIndex);
+    expect(front.zIndex).toBeGreaterThan(SHARED_OASIS_LAYOUT.oasisZIndex);
     expect(front.zIndex).toBeGreaterThan(back.zIndex);
+    expect(front.depthScale).toBeGreaterThan(back.depthScale);
+    expect(front.depthBrightness).toBeGreaterThan(back.depthBrightness);
+    expect(front.depthOpacity).toBeGreaterThan(back.depthOpacity);
   });
 
   it("0·25·50·75·100 진행 여정과 현재 도달 상태를 표시한다", () => {
@@ -247,7 +252,7 @@ describe("SharedOasisScene", () => {
     const markup = renderScene({ percent: 50 });
 
     expect(markup).toContain(
-      'data-member-id="friend" data-member-status="complete" data-current-member="false" data-depth="front" data-label-side="right"',
+      'data-member-id="friend" data-member-status="complete" data-current-member="false" data-depth="front" data-depth-ratio=',
     );
     expect(markup).toContain('class="shared-oasis-scene__member-cluster"');
     expect(markup).toContain(
@@ -262,40 +267,72 @@ describe("SharedOasisScene", () => {
     const markup = renderScene({ percent: 75 });
 
     expect(markup).toContain('class="shared-oasis-scene__bloom-aura"');
+    expect(markup).toContain('class="shared-oasis-scene__oasis-mirage"');
     expect(markup).not.toContain("shared-oasis-scene__community-ring");
   });
 
-  it("대기 멤버는 모래 홈만, 기여 멤버는 젖은 물길과 완벽 성공 하이라이트를 렌더링한다", () => {
+  it("0/4를 포함한 모든 멤버에게 glow·core·glint 연결을 유지한다", () => {
     const members: Member[] = [
       { ...MEMBERS[0], id: "pending", drops: 0 },
       { ...MEMBERS[1], id: "active", drops: 3 },
     ];
     const markup = renderScene({ percent: 100, members });
 
-    expect(markup.match(/shared-oasis-scene__connection-groove/g)).toHaveLength(
+    expect(markup.match(/shared-oasis-scene__connection-glow/g)).toHaveLength(
       2,
     );
-    expect(markup.match(/shared-oasis-scene__connection-water/g)).toHaveLength(
-      1,
+    expect(markup.match(/shared-oasis-scene__connection-core/g)).toHaveLength(
+      2,
     );
-    expect(
-      markup.match(/shared-oasis-scene__connection-perfect-highlight/g),
-    ).toHaveLength(1);
+    expect(markup.match(/shared-oasis-scene__connection-glint/g)).toHaveLength(
+      2,
+    );
     expect(markup).toContain(
       'data-member-connection="pending" data-connection-active="false"',
     );
     expect(markup).toContain(
       'data-member-connection="active" data-connection-active="true"',
     );
+    expect(markup).toContain("--connection-opacity:0.1");
+    expect(markup).toContain("--connection-opacity:0.573");
     expect(markup).toContain('data-oasis-status="PERFECT_SUCCESS"');
   });
 
-  it("멤버마다 다른 지연값을 가진 부유 레이어를 렌더링한다", () => {
+  it("멤버마다 다른 높이·ID 기반 주기·위상을 가진 이미지 부유 레이어를 렌더링한다", () => {
     const markup = renderScene({ percent: 50 });
 
     expect(markup.match(/data-float-delay=/g)).toHaveLength(2);
-    expect(markup).toContain('data-float-delay="0"');
-    expect(markup).toContain('data-float-delay="0.18"');
+    expect(markup.match(/data-float-duration=/g)).toHaveLength(2);
+    expect(markup).toContain('data-float-lift="20.72"');
+    expect(markup).toContain('data-float-lift="30"');
+    expect(markup.match(/shared-oasis-scene__island-ground/g)).toHaveLength(2);
+    expect(markup.match(/shared-oasis-scene__island-shadow/g)).toHaveLength(2);
+    expect(markup.match(/shared-oasis-scene__island-haze/g)).toHaveLength(2);
+    expect(
+      markup.match(/shared-oasis-scene__island-mirage-tail/g),
+    ).toHaveLength(2);
+    expect(markup.match(/shared-oasis-scene__island-lift/g)).toHaveLength(2);
+    expect(markup.match(/shared-oasis-scene__island-float/g)).toHaveLength(2);
+
+    expect(markup.indexOf("shared-oasis-scene__island-ground")).toBeLessThan(
+      markup.indexOf("shared-oasis-scene__island-lift"),
+    );
+    const completeMemberMarkup = markup.slice(
+      markup.indexOf('data-member-id="friend"'),
+    );
+    expect(
+      completeMemberMarkup.indexOf("shared-oasis-scene__island-complete-mark"),
+    ).toBeLessThan(
+      completeMemberMarkup.indexOf("shared-oasis-scene__member-chip"),
+    );
+  });
+
+  it("reduced motion에서도 기여량별 정적 높이 정보를 유지한다", () => {
+    const markup = renderScene({ percent: 50, reducedMotion: true });
+
+    expect(markup).toContain('data-reduced-motion="true"');
+    expect(markup).toContain('data-float-lift="20.72"');
+    expect(markup).toContain('data-float-lift="30"');
   });
 
   it("현재 사용자 섬만 버튼이며 busy·외부 비활성 상태를 따른다", () => {

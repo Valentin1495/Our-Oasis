@@ -11,6 +11,7 @@ interface Props {
   memberCount: number;
   onPreviewPercentChange: (percent: number) => void;
   onMemberCountChange: (count: number) => void;
+  onPreviewMemberProgression: () => void;
   onSimulateContribution: (
     origin: "local" | "remote",
     drops: number,
@@ -30,6 +31,7 @@ export function OasisDebugPanel({
   memberCount,
   onPreviewPercentChange,
   onMemberCountChange,
+  onPreviewMemberProgression,
   onSimulateContribution,
   onSimulateParticipation,
   onSimulateThreshold,
@@ -105,6 +107,14 @@ export function OasisDebugPanel({
             onMemberCountChange(Number(event.currentTarget.value))
           }
         />
+
+        <button
+          className={styles.comparisonButton}
+          type="button"
+          onClick={onPreviewMemberProgression}
+        >
+          멤버 0~4 비교
+        </button>
 
         <fieldset className={styles.eventGroup}>
           <legend>이벤트 시뮬레이션</legend>

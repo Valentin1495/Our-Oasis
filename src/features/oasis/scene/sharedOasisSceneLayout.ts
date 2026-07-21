@@ -3,6 +3,10 @@ export interface MemberOrbitPosition {
   yPercent: number;
   zIndex: number;
   depth: "back" | "front";
+  depthRatio: number;
+  depthScale: number;
+  depthBrightness: number;
+  depthOpacity: number;
 }
 
 export interface MemberOrbitGeometry {
@@ -24,14 +28,15 @@ export interface WaterDropArc {
 export interface MemberConnectionPath {
   d: string;
   start: OasisPoint;
-  control: OasisPoint;
+  control1: OasisPoint;
+  control2: OasisPoint;
   target: OasisPoint;
 }
 
 export const SHARED_OASIS_LAYOUT = {
   centerXPercent: 50,
-  centerYPercent: 58,
-  memberSizePercent: 22,
+  centerYPercent: 53,
+  memberSizePercent: 25,
   oasisZIndex: 100,
   backZIndexMin: 70,
   backZIndexMax: 99,
@@ -41,27 +46,27 @@ export const SHARED_OASIS_LAYOUT = {
   orbitByMemberCount: {
     1: {
       radiusXPercent: 37,
-      radiusYPercent: 20,
+      radiusYPercent: 27,
       startAngleRadians: Math.PI / 2,
     },
     2: {
-      radiusXPercent: 50,
-      radiusYPercent: 20,
+      radiusXPercent: 47,
+      radiusYPercent: 27,
       startAngleRadians: (-3 * Math.PI) / 4,
     },
     3: {
-      radiusXPercent: 44,
-      radiusYPercent: 20,
+      radiusXPercent: 43,
+      radiusYPercent: 27,
       startAngleRadians: (-5 * Math.PI) / 6,
     },
     4: {
-      radiusXPercent: 50,
-      radiusYPercent: 20,
+      radiusXPercent: 47,
+      radiusYPercent: 27,
       startAngleRadians: (-3 * Math.PI) / 4,
     },
     5: {
-      radiusXPercent: 41,
-      radiusYPercent: 20,
+      radiusXPercent: 37.5,
+      radiusYPercent: 27,
       startAngleRadians: (-7 * Math.PI) / 10,
     },
   },
@@ -92,6 +97,7 @@ export function getMemberOrbitPosition(
     Math.abs(rawDepth) < SHARED_OASIS_LAYOUT.depthEpsilon ? 0 : rawDepth;
   const yOffset = normalizedDepth * geometry.radiusYPercent;
   const isFront = normalizedDepth >= 0;
+  const depthProgress = (normalizedDepth + 1) / 2;
   const zIndex = isFront
     ? SHARED_OASIS_LAYOUT.frontZIndexMin +
       Math.round(
@@ -112,6 +118,10 @@ export function getMemberOrbitPosition(
     yPercent: SHARED_OASIS_LAYOUT.centerYPercent + yOffset,
     zIndex,
     depth: isFront ? "front" : "back",
+    depthRatio: roundSceneCoordinate(normalizedDepth),
+    depthScale: roundSceneCoordinate(0.86 + depthProgress * 0.18),
+    depthBrightness: roundSceneCoordinate(0.94 + depthProgress * 0.08),
+    depthOpacity: roundSceneCoordinate(0.9 + depthProgress * 0.1),
   };
 }
 
@@ -164,26 +174,51 @@ export function getMemberConnectionPath(
     xPercent: roundSceneCoordinate(clampSceneCoordinate(target.xPercent)),
     yPercent: roundSceneCoordinate(clampSceneCoordinate(target.yPercent)),
   };
-  const horizontalDirection =
-    start.xPercent <= safeTarget.xPercent ? 1 : -1;
-  const control = {
+  const dx = safeTarget.xPercent - start.xPercent;
+  const dy = safeTarget.yPercent - start.yPercent;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const perpendicularX = -dy / distance;
+  const perpendicularY = dx / distance;
+  const bendDirection = start.xPercent <= safeTarget.xPercent ? -1 : 1;
+  const bendStrength = Math.min(12, 5 + distance * 0.11);
+  const control1 = {
     xPercent: roundSceneCoordinate(
       clampSceneCoordinate(
-        (start.xPercent + safeTarget.xPercent) / 2 +
-          horizontalDirection * 4,
+        start.xPercent +
+          dx * 0.32 +
+          perpendicularX * bendStrength * bendDirection,
       ),
     ),
     yPercent: roundSceneCoordinate(
       clampSceneCoordinate(
-        (start.yPercent + safeTarget.yPercent) / 2 + 3,
+        start.yPercent +
+          dy * 0.32 +
+          perpendicularY * bendStrength * bendDirection,
+      ),
+    ),
+  };
+  const control2 = {
+    xPercent: roundSceneCoordinate(
+      clampSceneCoordinate(
+        start.xPercent +
+          dx * 0.72 -
+          perpendicularX * bendStrength * bendDirection * 0.45,
+      ),
+    ),
+    yPercent: roundSceneCoordinate(
+      clampSceneCoordinate(
+        start.yPercent +
+          dy * 0.72 -
+          perpendicularY * bendStrength * bendDirection * 0.45,
       ),
     ),
   };
 
   return {
-    d: `M ${start.xPercent} ${start.yPercent} Q ${control.xPercent} ${control.yPercent} ${safeTarget.xPercent} ${safeTarget.yPercent}`,
+    d: `M ${start.xPercent} ${start.yPercent} C ${control1.xPercent} ${control1.yPercent} ${control2.xPercent} ${control2.yPercent} ${safeTarget.xPercent} ${safeTarget.yPercent}`,
     start,
-    control,
+    control1,
+    control2,
     target: safeTarget,
   };
 }

@@ -261,6 +261,22 @@ export function OasisMainPage() {
     );
   };
 
+  const handlePreviewMemberProgression = () => {
+    const comparisonMembers = getDebugMembers(5).map((member, index) => ({
+      ...member,
+      contributedDropsToday: index,
+      hasWaterRecordToday: index > 0,
+    }));
+    const totalDrops = comparisonMembers.reduce(
+      (sum, member) => sum + member.contributedDropsToday,
+      0,
+    );
+
+    setScenePreviewMembers(comparisonMembers);
+    setScenePreviewPercent((totalDrops / (comparisonMembers.length * 4)) * 100);
+    setSceneVariant("shared");
+  };
+
   const handlePreviewContribution = (
     origin: "local" | "remote",
     requestedDrops: number,
@@ -555,6 +571,7 @@ export function OasisMainPage() {
           memberCount={targetSceneSnapshot.members.length}
           onPreviewPercentChange={setScenePreviewPercent}
           onMemberCountChange={handlePreviewMemberCountChange}
+          onPreviewMemberProgression={handlePreviewMemberProgression}
           onSimulateContribution={handlePreviewContribution}
           onSimulateParticipation={handlePreviewParticipation}
           onSimulateThreshold={handlePreviewThreshold}

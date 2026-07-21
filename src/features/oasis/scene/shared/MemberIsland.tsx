@@ -3,14 +3,13 @@ import { motion } from "motion/react";
 import type { MemberOrbitPosition } from "../sharedOasisSceneLayout";
 import {
   getMemberAccent,
+  getIslandVisualState,
+  getMemberAnimationTiming,
   getMemberIslandStatus,
   getMemberLabelSide,
+  MEMBER_DAILY_DROP_TARGET,
   normalizeMemberDrops,
 } from "./memberIslandPresentation";
-
-const ISLAND_FLOAT_OFFSET_PX = 4;
-const ISLAND_FLOAT_DURATION_SECONDS = 2.5;
-const ISLAND_FLOAT_DELAY_SECONDS = 0.18;
 
 interface Props {
   id: string;
@@ -20,10 +19,8 @@ interface Props {
   islandImage: string;
   avatarImage: string;
   position: MemberOrbitPosition;
-  index: number;
   isCurrentMember: boolean;
   isSourceActive: boolean;
-  reducedMotion: boolean;
   interactionDisabled: boolean;
   onGiveWater?: () => void | Promise<void>;
 }
@@ -36,10 +33,8 @@ export function MemberIsland({
   islandImage,
   avatarImage,
   position,
-  index,
   isCurrentMember,
   isSourceActive,
-  reducedMotion,
   interactionDisabled,
   onGiveWater,
 }: Props) {
@@ -50,38 +45,47 @@ export function MemberIsland({
   });
   const accent = getMemberAccent(id);
   const labelSide = getMemberLabelSide(position.xPercent);
-  const floatDelay = index * ISLAND_FLOAT_DELAY_SECONDS;
-  const floatAnimation = reducedMotion
-    ? { y: 0 }
-    : {
-        y: [
-          -ISLAND_FLOAT_OFFSET_PX,
-          ISLAND_FLOAT_OFFSET_PX,
-          -ISLAND_FLOAT_OFFSET_PX,
-        ],
-      };
-  const floatTransition = reducedMotion
-    ? { duration: 0 }
-    : {
-        delay: floatDelay,
-        duration: ISLAND_FLOAT_DURATION_SECONDS,
-        ease: "easeInOut" as const,
-        repeat: Infinity,
-      };
+  const visualState = getIslandVisualState(
+    normalizedDrops,
+    MEMBER_DAILY_DROP_TARGET,
+  );
+  const animationTiming = getMemberAnimationTiming(id);
 
   const content: ReactNode = (
     <>
-      <span className="shared-oasis-scene__island-stage" aria-hidden="true">
-        {isSourceActive && (
-          <motion.span
-            className="shared-oasis-scene__island-ripple"
-            initial={{ opacity: 0.8, scale: 0.5 }}
-            animate={{ opacity: 0, scale: 1.6 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
-        )}
-        <span className="shared-oasis-scene__island-status-ring" />
-        <img className="shared-oasis-scene__island" src={islandImage} alt="" />
+      <span className="shared-oasis-scene__island-ground" aria-hidden="true">
+        <span className="shared-oasis-scene__island-shadow" />
+      </span>
+
+      <span
+        className="shared-oasis-scene__island-lift"
+        data-float-lift={visualState.liftPx}
+        aria-hidden="true"
+      >
+        <span className="shared-oasis-scene__island-haze" />
+        <span className="shared-oasis-scene__island-mirage-tail" />
+        <span
+          className="shared-oasis-scene__island-float"
+          data-float-delay={animationTiming.delaySeconds}
+          data-float-duration={animationTiming.durationSeconds}
+        >
+          <span className="shared-oasis-scene__island-stage">
+            {isSourceActive && (
+              <motion.span
+                className="shared-oasis-scene__island-ripple"
+                initial={{ opacity: 0.8, scale: 0.5 }}
+                animate={{ opacity: 0, scale: 1.6 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            )}
+            <img
+              className="shared-oasis-scene__island"
+              src={islandImage}
+              alt=""
+            />
+          </span>
+        </span>
+        <span className="shared-oasis-scene__island-focus-halo" />
         {status === "complete" && (
           <span
             className="shared-oasis-scene__island-complete-mark"
@@ -135,48 +139,54 @@ export function MemberIsland({
       data-member-status={status}
       data-current-member={isCurrentMember}
       data-depth={position.depth}
+      data-depth-ratio={position.depthRatio}
       data-label-side={labelSide}
       style={
         {
           "--member-x": `${position.xPercent}%`,
           "--member-y": `${position.yPercent}%`,
           "--member-z": position.zIndex,
+          "--member-depth-scale": position.depthScale,
+          "--member-depth-brightness": position.depthBrightness,
+          "--member-depth-opacity": position.depthOpacity,
           "--member-accent": accent.accent,
           "--member-accent-soft": accent.soft,
           "--member-accent-ink": accent.ink,
+          "--member-lift": `${visualState.liftPx}px`,
+          "--member-float-amount": `${visualState.floatAmountPx}px`,
+          "--member-shadow-scale-x": visualState.shadowScaleX,
+          "--member-shadow-scale-y": visualState.shadowScaleY,
+          "--member-shadow-opacity": visualState.shadowOpacity,
+          "--member-shadow-blur": `${visualState.shadowBlurPx}px`,
+          "--member-haze-opacity": visualState.hazeOpacity,
+          "--member-mirage-tail-opacity": visualState.mirageTailOpacity,
+          "--member-saturation": visualState.saturation,
+          "--member-brightness": visualState.brightness,
+          "--member-island-opacity": visualState.islandOpacity,
+          "--member-float-duration": `${animationTiming.durationSeconds}s`,
+          "--member-float-delay": `${animationTiming.delaySeconds}s`,
+          "--member-haze-duration": `${animationTiming.hazeDurationSeconds}s`,
         } as CSSProperties
       }
     >
       {isCurrentMember ? (
-        <motion.button
+        <button
           type="button"
           className="shared-oasis-scene__member-cluster shared-oasis-scene__island-button"
           data-current-member="true"
-          data-float-delay={floatDelay}
           disabled={interactionDisabled}
           aria-label={`${name}의 섬, 오늘 물방울 ${normalizedDrops}개 기여. 물 한 잔 채우기`}
-          animate={floatAnimation}
-          transition={floatTransition}
-          whileTap={
-            interactionDisabled || reducedMotion ? undefined : { scale: 0.96 }
-          }
           onClick={() => {
             if (interactionDisabled || !onGiveWater) return;
             void onGiveWater();
           }}
         >
           {content}
-        </motion.button>
+        </button>
       ) : (
-        <motion.span
-          className="shared-oasis-scene__member-cluster"
-          data-float-delay={floatDelay}
-          animate={floatAnimation}
-          transition={floatTransition}
-          aria-hidden="true"
-        >
+        <span className="shared-oasis-scene__member-cluster" aria-hidden="true">
           {content}
-        </motion.span>
+        </span>
       )}
 
       <span className="visually-hidden">

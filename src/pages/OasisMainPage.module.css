@@ -49,12 +49,19 @@
 }
 
 .heroTextureVeil {
-  background: radial-gradient(
-    ellipse 76% 50% at 50% 67%,
-    rgba(255, 238, 207, 0.34) 0%,
-    rgba(244, 205, 151, 0.14) 48%,
-    transparent 80%
-  );
+  background:
+    radial-gradient(
+      ellipse 86% 58% at 50% 53%,
+      rgba(255, 245, 214, 0.42) 0%,
+      rgba(250, 220, 171, 0.16) 52%,
+      transparent 82%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 246, 222, 0.16),
+      transparent 36%,
+      rgba(224, 165, 96, 0.08)
+    );
 }
 
 .heroSuccessLight,

@@ -3,6 +3,12 @@ import {
   getMemberConnectionPath,
   getMemberOrbitPosition,
 } from "../sharedOasisSceneLayout";
+import {
+  getIslandVisualState,
+  getMemberAnimationTiming,
+  MEMBER_DAILY_DROP_TARGET,
+  normalizeMemberDrops,
+} from "./memberIslandPresentation";
 
 interface ConnectionMember {
   id: string;
@@ -11,14 +17,6 @@ interface ConnectionMember {
 
 interface Props {
   members: readonly ConnectionMember[];
-}
-
-function normalizeConnectionStrength(drops: number): number {
-  const normalizedDrops = Number.isFinite(drops)
-    ? Math.min(4, Math.max(0, Math.round(drops)))
-    : 0;
-
-  return 0.56 + (normalizedDrops / 4) * 0.34;
 }
 
 export function MemberConnectionLayer({ members }: Props) {
@@ -32,39 +30,48 @@ export function MemberConnectionLayer({ members }: Props) {
       {members.map((member, index) => {
         const position = getMemberOrbitPosition(index, members.length);
         const connection = getMemberConnectionPath(position);
-        const isActive = member.drops > 0;
+        const normalizedDrops = normalizeMemberDrops(member.drops);
+        const visualState = getIslandVisualState(
+          normalizedDrops,
+          MEMBER_DAILY_DROP_TARGET,
+        );
+        const animationTiming = getMemberAnimationTiming(member.id);
+        const isActive = normalizedDrops > 0;
 
         return (
           <g
             key={member.id}
             data-member-connection={member.id}
             data-connection-active={isActive}
+            style={
+              {
+                "--connection-opacity": visualState.connectionOpacity,
+                "--connection-glow-opacity": Number(
+                  (0.1 + visualState.connectionOpacity * 0.5).toFixed(3),
+                ),
+                "--connection-glint-opacity": Number(
+                  (0.02 + visualState.connectionOpacity * 0.9).toFixed(3),
+                ),
+                "--connection-duration": `${animationTiming.hazeDurationSeconds}s`,
+                "--connection-delay": `${animationTiming.delaySeconds}s`,
+              } as CSSProperties
+            }
           >
             <path
-              className="shared-oasis-scene__connection-groove"
+              className="shared-oasis-scene__connection-glow"
               d={connection.d}
+              pathLength="1"
             />
-            {isActive && (
-              <>
-                <path
-                  className="shared-oasis-scene__connection-water"
-                  d={connection.d}
-                  pathLength="1"
-                  style={
-                    {
-                      "--connection-opacity": normalizeConnectionStrength(
-                        member.drops,
-                      ),
-                    } as CSSProperties
-                  }
-                />
-                <path
-                  className="shared-oasis-scene__connection-perfect-highlight"
-                  d={connection.d}
-                  pathLength="1"
-                />
-              </>
-            )}
+            <path
+              className="shared-oasis-scene__connection-core"
+              d={connection.d}
+              pathLength="1"
+            />
+            <path
+              className="shared-oasis-scene__connection-glint"
+              d={connection.d}
+              pathLength="1"
+            />
           </g>
         );
       })}

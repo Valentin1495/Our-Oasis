@@ -1,6 +1,6 @@
-import islandBenchImage from "./assets/island_bench.png";
-import islandCampfireImage from "./assets/island_campfire.png";
-import islandTentImage from "./assets/island_tent.png";
+import islandBenchImage from "./assets/island_bench_sand.png";
+import islandCampfireImage from "./assets/island_campfire_sand.png";
+import islandTentImage from "./assets/island_tent_sand.png";
 
 const MEMBER_ISLAND_IMAGES = [
   islandBenchImage,

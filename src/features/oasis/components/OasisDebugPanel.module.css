@@ -71,6 +71,17 @@
   color: #087f78;
 }
 
+.comparisonButton {
+  min-height: 36px;
+  border: 1px solid #b8ded9;
+  border-radius: 9px;
+  background: #effaf8;
+  color: #087f78;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .option {
   display: flex;
   align-items: center;

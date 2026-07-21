@@ -229,6 +229,7 @@ export function SharedOasisScene({
         </div>
 
         <div className="shared-oasis-scene__oasis" aria-hidden="true">
+          <span className="shared-oasis-scene__oasis-mirage" />
           {OASIS_LAYERS.map((layer) => {
             const isActive = layer.status === status;
 
@@ -264,14 +265,12 @@ export function SharedOasisScene({
                 islandImage={member.islandImage}
                 avatarImage={member.avatarImage}
                 position={position}
-                index={index}
                 isCurrentMember={member.id === currentMemberId}
                 isSourceActive={
                   event?.kind === "contribution" &&
                   (phase === "source" || phase === "travel") &&
                   dropActorMemberId === member.id
                 }
-                reducedMotion={reducedMotion}
                 interactionDisabled={interactionDisabled}
                 onGiveWater={onGiveWater}
               />
