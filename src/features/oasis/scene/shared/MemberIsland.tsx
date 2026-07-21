@@ -93,6 +93,12 @@ export function MemberIsland({
       </span>
 
       <span
+        className="shared-oasis-scene__member-connector"
+        data-depth={position.depth}
+        aria-hidden="true"
+      />
+
+      <span
         className="shared-oasis-scene__member-chip"
         data-depth={position.depth}
         data-label-side={labelSide}

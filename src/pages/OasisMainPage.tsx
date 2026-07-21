@@ -20,6 +20,7 @@ import {
   createOasisSceneSnapshot,
   deriveOasisProgressMessage,
   getOasisAchievements,
+  getOasisStatus,
   getTodayMaxDrops,
   useOasisSceneController,
   type OasisSceneMember,
@@ -201,6 +202,7 @@ export function OasisMainPage() {
     sceneController.displayedSnapshot ?? targetSceneSnapshot;
   const displayedScenePercent =
     displayedSceneSnapshot.progress.displayPercent;
+  const displayedOasisStatus = getOasisStatus(displayedScenePercent);
   const maxDrops = getTodayMaxDrops(oasisState);
   const displayedTotalDrops =
     displayedSceneSnapshot.progress.totalDrops;
@@ -420,22 +422,29 @@ export function OasisMainPage() {
         } as CSSProperties
       }
     >
-      <header className={styles.header}>
-        <div className={styles.headerCopy}>
-          <h1 className={styles.title}>우리들의 오아시스</h1>
-          <p className={styles.subtitle}>
-            {room.name} · 오늘 친구들과 함께 채워요
-          </p>
-        </div>
-        <span
-          className={styles.dayBadge}
-          aria-label={`챌린지 ${daysLeft}일 남음`}
-        >
-          D-{daysLeft}
-        </span>
-      </header>
+      <div
+        className={styles.desertHero}
+        data-oasis-status={displayedOasisStatus}
+      >
+        <span className={styles.heroTextureVeil} aria-hidden="true" />
+        <span className={styles.heroSuccessLight} aria-hidden="true" />
+        <span className={styles.heroPerfectLight} aria-hidden="true" />
 
-      <main className={styles.content}>
+        <header className={styles.header}>
+          <div className={styles.headerCopy}>
+            <h1 className={styles.title}>우리들의 오아시스</h1>
+            <p className={styles.subtitle}>
+              {room.name} · 오늘 친구들과 함께 채워요
+            </p>
+          </div>
+          <span
+            className={styles.dayBadge}
+            aria-label={`챌린지 ${daysLeft}일 남음`}
+          >
+            D-{daysLeft}
+          </span>
+        </header>
+
         <section
           className={styles.visualSection}
           aria-label="오늘의 공유 오아시스"
@@ -460,7 +469,9 @@ export function OasisMainPage() {
             onImpactComplete={sceneController.completeImpact}
           />
         </section>
+      </div>
 
+      <main className={styles.content}>
         <section className={styles.progressStatus}>
           <div
             key={`${progressMessage.headline}-${progressMessage.detail ?? ""}`}

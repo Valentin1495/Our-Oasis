@@ -8,6 +8,7 @@ import { getMemberIslandImage } from "./shared/memberIslandImage";
 import { getMemberLabelSide } from "./shared/memberIslandPresentation";
 import { SharedOasisScene, type Member } from "./SharedOasisScene";
 import {
+  getMemberConnectionPath,
   getMemberOrbitGeometry,
   getMemberOrbitPosition,
   getWaterDropArc,
@@ -155,6 +156,26 @@ describe("SharedOasisScene", () => {
   );
 
   it.each([1, 2, 3, 4, 5])(
+    "%s명 배치에서 각 섬과 중앙을 장면 범위 안의 물길로 연결한다",
+    (memberCount) => {
+      for (let index = 0; index < memberCount; index += 1) {
+        const position = getMemberOrbitPosition(index, memberCount);
+        const connection = getMemberConnectionPath(position);
+
+        expect(connection.d).toMatch(/^M [\d.]+ [\d.]+ Q [\d.]+ [\d.]+ [\d.]+ [\d.]+$/);
+        expect(connection.start.xPercent).toBeGreaterThanOrEqual(0);
+        expect(connection.start.xPercent).toBeLessThanOrEqual(100);
+        expect(connection.start.yPercent).toBeGreaterThanOrEqual(0);
+        expect(connection.start.yPercent).toBeLessThanOrEqual(100);
+        expect(connection.target).toEqual({
+          xPercent: SHARED_OASIS_LAYOUT.centerXPercent,
+          yPercent: SHARED_OASIS_LAYOUT.centerYPercent,
+        });
+      }
+    },
+  );
+
+  it.each([1, 2, 3, 4, 5])(
     "%s명 배치에서 명패를 섬 위치에 맞춰 화면 안쪽으로 펼친다",
     (memberCount) => {
       const members = Array.from({ length: memberCount }, (_, index) => ({
@@ -232,6 +253,9 @@ describe("SharedOasisScene", () => {
     expect(markup).toContain(
       'class="shared-oasis-scene__member-chip" data-depth="front" data-label-side="right"',
     );
+    expect(
+      markup.match(/class="shared-oasis-scene__member-connector"/g),
+    ).toHaveLength(MEMBERS.length);
   });
 
   it("그리드 대신 중앙 오아시스 하단에 블룸 오라를 렌더링한다", () => {
@@ -239,6 +263,31 @@ describe("SharedOasisScene", () => {
 
     expect(markup).toContain('class="shared-oasis-scene__bloom-aura"');
     expect(markup).not.toContain("shared-oasis-scene__community-ring");
+  });
+
+  it("대기 멤버는 모래 홈만, 기여 멤버는 젖은 물길과 완벽 성공 하이라이트를 렌더링한다", () => {
+    const members: Member[] = [
+      { ...MEMBERS[0], id: "pending", drops: 0 },
+      { ...MEMBERS[1], id: "active", drops: 3 },
+    ];
+    const markup = renderScene({ percent: 100, members });
+
+    expect(markup.match(/shared-oasis-scene__connection-groove/g)).toHaveLength(
+      2,
+    );
+    expect(markup.match(/shared-oasis-scene__connection-water/g)).toHaveLength(
+      1,
+    );
+    expect(
+      markup.match(/shared-oasis-scene__connection-perfect-highlight/g),
+    ).toHaveLength(1);
+    expect(markup).toContain(
+      'data-member-connection="pending" data-connection-active="false"',
+    );
+    expect(markup).toContain(
+      'data-member-connection="active" data-connection-active="true"',
+    );
+    expect(markup).toContain('data-oasis-status="PERFECT_SUCCESS"');
   });
 
   it("멤버마다 다른 지연값을 가진 부유 레이어를 렌더링한다", () => {

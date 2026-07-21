@@ -21,10 +21,17 @@ export interface WaterDropArc {
   top: [string, string, string];
 }
 
+export interface MemberConnectionPath {
+  d: string;
+  start: OasisPoint;
+  control: OasisPoint;
+  target: OasisPoint;
+}
+
 export const SHARED_OASIS_LAYOUT = {
   centerXPercent: 50,
-  centerYPercent: 56,
-  memberSizePercent: 20,
+  centerYPercent: 58,
+  memberSizePercent: 22,
   oasisZIndex: 100,
   backZIndexMin: 70,
   backZIndexMax: 99,
@@ -34,27 +41,27 @@ export const SHARED_OASIS_LAYOUT = {
   orbitByMemberCount: {
     1: {
       radiusXPercent: 37,
-      radiusYPercent: 30,
+      radiusYPercent: 20,
       startAngleRadians: Math.PI / 2,
     },
     2: {
       radiusXPercent: 50,
-      radiusYPercent: 30,
+      radiusYPercent: 20,
       startAngleRadians: (-3 * Math.PI) / 4,
     },
     3: {
       radiusXPercent: 44,
-      radiusYPercent: 30,
+      radiusYPercent: 20,
       startAngleRadians: (-5 * Math.PI) / 6,
     },
     4: {
       radiusXPercent: 50,
-      radiusYPercent: 30,
+      radiusYPercent: 20,
       startAngleRadians: (-3 * Math.PI) / 4,
     },
     5: {
-      radiusXPercent: 42,
-      radiusYPercent: 30,
+      radiusXPercent: 41,
+      radiusYPercent: 20,
       startAngleRadians: (-7 * Math.PI) / 10,
     },
   },
@@ -131,5 +138,52 @@ export function getWaterDropArc(
       `${controlPoint.yPercent}%`,
       `${target.yPercent}%`,
     ],
+  };
+}
+
+function clampSceneCoordinate(value: number): number {
+  return Math.min(100, Math.max(0, value));
+}
+
+function roundSceneCoordinate(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+export function getMemberConnectionPath(
+  source: OasisPoint,
+  target: OasisPoint = {
+    xPercent: SHARED_OASIS_LAYOUT.centerXPercent,
+    yPercent: SHARED_OASIS_LAYOUT.centerYPercent,
+  },
+): MemberConnectionPath {
+  const start = {
+    xPercent: roundSceneCoordinate(clampSceneCoordinate(source.xPercent)),
+    yPercent: roundSceneCoordinate(clampSceneCoordinate(source.yPercent)),
+  };
+  const safeTarget = {
+    xPercent: roundSceneCoordinate(clampSceneCoordinate(target.xPercent)),
+    yPercent: roundSceneCoordinate(clampSceneCoordinate(target.yPercent)),
+  };
+  const horizontalDirection =
+    start.xPercent <= safeTarget.xPercent ? 1 : -1;
+  const control = {
+    xPercent: roundSceneCoordinate(
+      clampSceneCoordinate(
+        (start.xPercent + safeTarget.xPercent) / 2 +
+          horizontalDirection * 4,
+      ),
+    ),
+    yPercent: roundSceneCoordinate(
+      clampSceneCoordinate(
+        (start.yPercent + safeTarget.yPercent) / 2 + 3,
+      ),
+    ),
+  };
+
+  return {
+    d: `M ${start.xPercent} ${start.yPercent} Q ${control.xPercent} ${control.yPercent} ${safeTarget.xPercent} ${safeTarget.yPercent}`,
+    start,
+    control,
+    target: safeTarget,
   };
 }

@@ -14,6 +14,7 @@ import {
   type OasisStatus,
 } from "./oasisState";
 import { MemberIsland } from "./shared/MemberIsland";
+import { MemberConnectionLayer } from "./shared/MemberConnectionLayer";
 import {
   getMemberOrbitPosition,
   getWaterDropArc,
@@ -128,6 +129,8 @@ export function SharedOasisScene({
         }
       >
         <div className="shared-oasis-scene__background" aria-hidden="true" />
+
+        <MemberConnectionLayer members={members} />
 
         <div
           className="shared-oasis-scene__progress"
