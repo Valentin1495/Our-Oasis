@@ -13,13 +13,11 @@ export interface MemberIslandVisualState {
   progress: number;
   easedProgress: number;
   liftPx: number;
-  floatAmountPx: number;
   shadowScaleX: number;
   shadowScaleY: number;
   shadowOpacity: number;
   shadowBlurPx: number;
   hazeOpacity: number;
-  mirageTailOpacity: number;
   saturation: number;
   brightness: number;
   islandOpacity: number;
@@ -112,14 +110,12 @@ export function getIslandVisualState(
   return {
     progress: round(progress),
     easedProgress: round(easedProgress),
-    liftPx: round(interpolate(8, 30, easedProgress), 2),
-    floatAmountPx: round(interpolate(2, 4, easedProgress), 2),
-    shadowScaleX: round(interpolate(0.95, 0.7, easedProgress)),
-    shadowScaleY: round(interpolate(0.82, 0.6, easedProgress)),
-    shadowOpacity: round(interpolate(0.21, 0.11, easedProgress)),
-    shadowBlurPx: round(interpolate(7, 18, easedProgress), 2),
-    hazeOpacity: round(interpolate(0.1, 0.28, easedProgress)),
-    mirageTailOpacity: round(interpolate(0.22, 0.52, easedProgress)),
+    liftPx: round(interpolate(2, 8, easedProgress), 2),
+    shadowScaleX: round(interpolate(0.98, 0.88, easedProgress)),
+    shadowScaleY: round(interpolate(0.86, 0.76, easedProgress)),
+    shadowOpacity: round(interpolate(0.18, 0.12, easedProgress)),
+    shadowBlurPx: round(interpolate(4, 8, easedProgress), 2),
+    hazeOpacity: round(interpolate(0.03, 0.12, easedProgress)),
     saturation: round(interpolate(0.62, 1, easedProgress)),
     brightness: round(interpolate(0.9, 1.03, easedProgress)),
     islandOpacity: round(interpolate(0.86, 1, easedProgress)),
@@ -131,13 +127,13 @@ export function getMemberAnimationTiming(
   memberId: string,
 ): MemberAnimationTiming {
   const hash = hashMemberId(memberId);
-  const durationProgress = (hash % 1_401) / 1_400;
-  const durationSeconds = round(interpolate(4, 5.4, durationProgress), 2);
+  const durationProgress = (hash % 1_801) / 1_800;
+  const durationSeconds = round(interpolate(6.4, 8.2, durationProgress), 2);
   const phaseProgress = ((hash >>> 8) % 1_001) / 1_000;
 
   return {
     durationSeconds,
     delaySeconds: round(-durationSeconds * phaseProgress, 2),
-    hazeDurationSeconds: round(durationSeconds + 3.2, 2),
+    hazeDurationSeconds: round(durationSeconds + 3.6, 2),
   };
 }

@@ -2,7 +2,6 @@ export { DayResultModal } from "./components/DayResultModal";
 export { MemberList } from "./components/MemberList";
 export { OasisDebugPanel } from "./components/OasisDebugPanel";
 export { OasisScene } from "./components/OasisScene";
-export type { OasisSceneVariant } from "./components/OasisScene";
 export {
   SharedOasisScene,
   type Member as SharedOasisMember,

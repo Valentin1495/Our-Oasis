@@ -60,15 +60,11 @@ describe("memberIslandPresentation", () => {
       const current = presentations[index];
 
       expect(current.liftPx).toBeGreaterThan(previous.liftPx);
-      expect(current.floatAmountPx).toBeGreaterThan(previous.floatAmountPx);
       expect(current.shadowScaleX).toBeLessThan(previous.shadowScaleX);
       expect(current.shadowScaleY).toBeLessThan(previous.shadowScaleY);
       expect(current.shadowOpacity).toBeLessThan(previous.shadowOpacity);
       expect(current.shadowBlurPx).toBeGreaterThan(previous.shadowBlurPx);
       expect(current.hazeOpacity).toBeGreaterThan(previous.hazeOpacity);
-      expect(current.mirageTailOpacity).toBeGreaterThan(
-        previous.mirageTailOpacity,
-      );
       expect(current.saturation).toBeGreaterThan(previous.saturation);
       expect(current.brightness).toBeGreaterThan(previous.brightness);
       expect(current.islandOpacity).toBeGreaterThan(previous.islandOpacity);
@@ -80,14 +76,12 @@ describe("memberIslandPresentation", () => {
     expect(presentations[0]).toMatchObject({
       progress: 0,
       easedProgress: 0,
-      liftPx: 8,
-      floatAmountPx: 2,
-      shadowScaleX: 0.95,
-      shadowScaleY: 0.82,
-      shadowOpacity: 0.21,
-      shadowBlurPx: 7,
-      hazeOpacity: 0.1,
-      mirageTailOpacity: 0.22,
+      liftPx: 2,
+      shadowScaleX: 0.98,
+      shadowScaleY: 0.86,
+      shadowOpacity: 0.18,
+      shadowBlurPx: 4,
+      hazeOpacity: 0.03,
       saturation: 0.62,
       brightness: 0.9,
       islandOpacity: 0.86,
@@ -96,14 +90,12 @@ describe("memberIslandPresentation", () => {
     expect(presentations[4]).toMatchObject({
       progress: 1,
       easedProgress: 1,
-      liftPx: 30,
-      floatAmountPx: 4,
-      shadowScaleX: 0.7,
-      shadowScaleY: 0.6,
-      shadowOpacity: 0.11,
-      shadowBlurPx: 18,
-      hazeOpacity: 0.28,
-      mirageTailOpacity: 0.52,
+      liftPx: 8,
+      shadowScaleX: 0.88,
+      shadowScaleY: 0.76,
+      shadowOpacity: 0.12,
+      shadowBlurPx: 8,
+      hazeOpacity: 0.12,
       saturation: 1,
       brightness: 1.03,
       islandOpacity: 1,
@@ -131,7 +123,7 @@ describe("memberIslandPresentation", () => {
     });
   });
 
-  it("멤버 ID에 따라 4~5.4초 주기와 결정적인 위상을 사용한다", () => {
+  it("멤버 ID에 따라 6.4~8.2초 주기와 결정적인 위상을 사용한다", () => {
     const ids = ["member-alpha", "member-beta", "member-gamma"];
     const original = Object.fromEntries(
       ids.map((id) => [id, getMemberAnimationTiming(id)]),
@@ -143,7 +135,8 @@ describe("memberIslandPresentation", () => {
     expect(reordered).toEqual(original);
     expect(
       Object.values(original).every(
-        ({ durationSeconds }) => durationSeconds >= 4 && durationSeconds <= 5.4,
+        ({ durationSeconds }) =>
+          durationSeconds >= 6.4 && durationSeconds <= 8.2,
       ),
     ).toBe(true);
     expect(

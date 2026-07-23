@@ -1,0 +1,227 @@
+.container {
+  position: relative;
+  display: flex;
+  width: 126px;
+  flex-direction: column;
+  align-items: center;
+}
+
+.status {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  width: min(310px, 88vw);
+  min-height: 18px;
+  align-items: center;
+  justify-content: center;
+  color: #6a513b;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.feedback {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid rgba(45, 153, 143, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 250, 236, 0.88);
+  box-shadow: 0 3px 10px rgba(83, 55, 31, 0.08);
+  color: #208e87;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  animation: water-feedback-in 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.warning {
+  margin-top: 2px;
+  color: #736457;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #795f48;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-shadow: 0 1px 1px rgba(255, 248, 224, 0.82);
+  white-space: nowrap;
+}
+
+.summaryComplete {
+  color: #187f78;
+  font-weight: 800;
+}
+
+.springButton {
+  position: relative;
+  display: flex;
+  width: 126px;
+  min-height: 102px;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 5px 3px;
+  border: 0;
+  background: transparent;
+  color: #4b3422;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.springButton:focus-visible {
+  border-radius: 28px;
+  outline: 3px solid #167c75;
+  outline-offset: 3px;
+}
+
+.springButton:disabled {
+  cursor: wait;
+}
+
+.springRim {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: grid;
+  width: 82px;
+  height: 70px;
+  place-items: center;
+  border: 7px solid #c38a4e;
+  border-radius: 48% 48% 44% 44%;
+  background: radial-gradient(
+    circle at 50% 44%,
+    #8fe8dc,
+    #28aaa4 64%,
+    #157f7a 100%
+  );
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 230, 174, 0.54),
+    inset 0 -9px 14px rgba(22, 104, 100, 0.28),
+    0 7px 0 #976139,
+    0 11px 14px rgba(81, 48, 26, 0.24);
+  transform: translateX(-50%);
+  transition:
+    transform 140ms ease,
+    filter 140ms ease;
+}
+
+.springRim::before,
+.springRim::after {
+  position: absolute;
+  bottom: -8px;
+  width: 25px;
+  height: 16px;
+  border: 2px solid rgba(112, 69, 35, 0.18);
+  border-radius: 48%;
+  background: #d6a162;
+  content: "";
+  z-index: -1;
+}
+
+.springRim::before {
+  left: -12px;
+  transform: rotate(-12deg);
+}
+
+.springRim::after {
+  right: -12px;
+  transform: rotate(12deg);
+}
+
+.springWater {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(219, 255, 250, 0.32), transparent);
+  filter: drop-shadow(0 0 7px rgba(200, 255, 249, 0.66));
+}
+
+.springWater svg {
+  width: 32px;
+  height: 40px;
+  overflow: visible;
+  fill: #c8fff7;
+  stroke: #f2fffd;
+  stroke-linecap: round;
+  stroke-width: 1.2;
+}
+
+.springWater svg path:last-child {
+  fill: none;
+  opacity: 0.82;
+}
+
+.buttonLabel {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  min-width: 118px;
+  min-height: 35px;
+  place-items: center;
+  padding: 7px 12px;
+  border: 1px solid rgba(125, 82, 43, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 242, 210, 0.94);
+  box-shadow:
+    0 3px 8px rgba(86, 53, 29, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.springButton:not(:disabled):active .springRim {
+  transform: translateX(-50%) translateY(3px) scale(0.97);
+}
+
+.springButton:disabled .springRim {
+  filter: saturate(0.45);
+  opacity: 0.76;
+}
+
+.springButton:disabled .springWater {
+  animation: spring-wait 1.1s ease-in-out infinite;
+}
+
+@keyframes water-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spring-wait {
+  50% {
+    opacity: 0.48;
+    transform: scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback,
+  .springRim,
+  .springWater {
+    transition: none;
+    animation: none;
+  }
+}

@@ -1,300 +1,458 @@
 .page {
+  position: relative;
+  isolation: isolate;
   width: min(100%, 480px);
   margin: 0 auto;
   overflow-x: hidden;
-  background: #fbf7f0;
-  color: #191f28;
-  box-shadow: 0 0 40px rgba(87, 58, 29, 0.08);
-}
-
-.desertHero {
-  position: relative;
-  isolation: isolate;
-  flex: 0 0 auto;
-  padding-top: env(safe-area-inset-top, 0px);
-  overflow: hidden;
-  background-color: #e8bc7e;
+  background-color: #c78e57;
   background-image:
     linear-gradient(
       180deg,
-      rgba(255, 232, 198, 0.12) 0%,
-      rgba(244, 202, 139, 0.02) 50%,
-      rgba(177, 111, 53, 0.14) 100%
+      rgba(255, 239, 204, 0.2) 0%,
+      rgba(222, 164, 102, 0.04) 48%,
+      rgba(105, 62, 34, 0.12) 100%
     ),
     url("../features/oasis/scene/shared/assets/bg_sand.png");
   background-position: center top;
+  background-repeat: no-repeat;
   background-size: cover;
+  box-shadow: 0 0 40px rgba(87, 58, 29, 0.12);
+  color: #3f2c1e;
 }
 
-.desertHero::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 0;
-  height: 25%;
-  background: linear-gradient(180deg, transparent, rgba(244, 214, 171, 0.2));
-  content: "";
-  pointer-events: none;
-}
-
-.heroTextureVeil,
-.heroSuccessLight,
-.heroPerfectLight {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+.textureVeil,
+.statusLight {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: -1;
   display: block;
+  width: min(100%, 480px);
+  height: 100dvh;
   pointer-events: none;
+  transform: translateX(-50%);
 }
 
-.heroTextureVeil {
+.textureVeil {
   background:
     radial-gradient(
-      ellipse 86% 58% at 50% 53%,
-      rgba(255, 245, 214, 0.42) 0%,
-      rgba(250, 220, 171, 0.16) 52%,
-      transparent 82%
+      circle at 14% 12%,
+      rgba(255, 244, 211, 0.62) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 86% 22%,
+      rgba(255, 243, 203, 0.5) 0 1px,
+      transparent 2px
     ),
     linear-gradient(
       180deg,
-      rgba(255, 246, 222, 0.16),
-      transparent 36%,
-      rgba(224, 165, 96, 0.08)
+      rgba(255, 246, 222, 0.14),
+      transparent 42%,
+      rgba(119, 71, 39, 0.08)
     );
 }
 
-.heroSuccessLight,
-.heroPerfectLight {
-  opacity: 0;
-  transition: opacity 520ms ease;
-}
-
-.heroSuccessLight {
+.statusLight {
   background: radial-gradient(
-    ellipse 68% 42% at 50% 67%,
-    rgba(108, 224, 211, 0.2) 0%,
-    rgba(133, 211, 187, 0.08) 48%,
-    transparent 76%
+    ellipse 82% 45% at 50% 47%,
+    rgba(255, 235, 190, 0.12),
+    transparent 72%
   );
+  opacity: 0.58;
+  transition:
+    background 520ms ease,
+    opacity 520ms ease;
 }
 
-.heroPerfectLight {
+.sharedSuccess .statusLight {
+  background: radial-gradient(
+    ellipse 84% 48% at 50% 47%,
+    rgba(104, 223, 208, 0.19),
+    rgba(255, 226, 151, 0.12) 48%,
+    transparent 74%
+  );
+  opacity: 0.86;
+}
+
+.perfectSuccess .statusLight {
   background:
     radial-gradient(
-      ellipse 72% 44% at 50% 66%,
-      rgba(255, 220, 133, 0.24) 0%,
-      rgba(159, 115, 207, 0.1) 48%,
-      transparent 78%
+      ellipse 86% 50% at 50% 45%,
+      rgba(255, 218, 121, 0.24),
+      rgba(142, 99, 190, 0.13) 48%,
+      transparent 76%
     ),
-    linear-gradient(180deg, rgba(121, 87, 152, 0.06), transparent 44%);
-}
-
-.desertHero[data-oasis-status="SHARED_SUCCESS"] .heroSuccessLight {
-  opacity: 1;
-}
-
-.desertHero[data-oasis-status="PERFECT_SUCCESS"] .heroSuccessLight {
-  opacity: 0.36;
-}
-
-.desertHero[data-oasis-status="PERFECT_SUCCESS"] .heroPerfectLight {
+    linear-gradient(180deg, rgba(118, 83, 151, 0.08), transparent 50%);
   opacity: 1;
 }
 
 .header {
   position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px var(--screen-padding-x) 8px;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 8px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 18px 6px;
+}
+
+.homeButton {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(117, 78, 42, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 233, 190, 0.68);
+  box-shadow:
+    0 4px 10px rgba(88, 53, 29, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  color: #704b2c;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.homeButton svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.homeButton:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 3px solid #167c75;
+  outline-offset: 2px;
 }
 
 .headerCopy {
   min-width: 0;
+  text-align: center;
 }
 
 .title {
   margin: 0;
-  color: #4a3423;
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.35;
+  overflow: hidden;
+  color: #4a321f;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.3;
   letter-spacing: -0.02em;
-  text-shadow: 0 1px 1px rgba(255, 246, 226, 0.72);
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(255, 239, 202, 0.78);
+  white-space: nowrap;
 }
 
 .subtitle {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
+  color: #765337;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 1px 1px rgba(255, 239, 202, 0.68);
+}
+
+.dayBadge {
+  display: grid;
+  width: 58px;
+  min-height: 38px;
+  place-items: center;
+  border: 1px solid rgba(117, 78, 42, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 233, 190, 0.66);
+  box-shadow:
+    0 4px 10px rgba(88, 53, 29, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  color: #286f68;
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 0 1px 1px rgba(255, 248, 226, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.progressStatus {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+.progressStatusContent {
+  display: flex;
+  max-width: 100%;
+  min-height: 46px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 9px;
+  border: 1px solid rgba(121, 83, 46, 0.15);
+  border-radius: 999px;
+  background: rgba(255, 239, 207, 0.76);
+  box-shadow:
+    0 5px 13px rgba(89, 55, 31, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  animation: status-change 0.22s ease-out;
+  backdrop-filter: blur(7px);
+}
+
+.progressMark {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #bff8ef, #43beb5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.64),
+    0 3px 7px rgba(35, 136, 128, 0.22);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.sharedSuccess .progressMark {
+  background: linear-gradient(145deg, #fff2bd, #e1a72c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 3px 8px rgba(166, 111, 22, 0.24);
+}
+
+.perfectSuccess .progressMark {
+  background: linear-gradient(145deg, #fff0a6, #9e71c5);
+}
+
+.progressCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.progressCopy strong {
   overflow: hidden;
-  color: #73553e;
+  color: #4c3422;
   font-size: 13px;
-  font-weight: 500;
-  line-height: 1.45;
-  text-shadow: 0 1px 1px rgba(255, 246, 226, 0.62);
+  font-weight: 900;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dayBadge {
-  flex-shrink: 0;
-  padding-top: 3px;
-  color: #286f68;
-  font-size: 13px;
-  font-weight: 700;
-  text-shadow: 0 1px 1px rgba(255, 246, 226, 0.72);
+.progressCopy small {
+  margin-top: 1px;
+  overflow: hidden;
+  color: #765b42;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.content {
+.inlineError {
   position: relative;
-  z-index: 2;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  min-height: 170px;
-  padding: 30px var(--screen-padding-x) 20px;
-  margin-top: -20px;
-  border-radius: 24px 24px 0 0;
-  background: #fbf7f0;
-  box-shadow: 0 -8px 24px rgba(104, 70, 35, 0.08);
+  z-index: 6;
+  margin: 4px 20px;
 }
 
 .visualSection {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
+  width: 100%;
+  flex: 1 0 auto;
   flex-direction: column;
   align-items: center;
+  min-height: 390px;
+}
+
+.actionDock {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) 126px minmax(72px, 1fr);
+  align-items: end;
+  gap: 6px;
   width: 100%;
+  padding: 5px 18px calc(10px + env(safe-area-inset-bottom, 0px));
 }
 
-.progressStatus {
-  min-height: 68px;
-  margin-top: 0;
-  text-align: center;
+.actionDock::before {
+  position: absolute;
+  right: 10%;
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  left: 10%;
+  z-index: -1;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(96, 57, 30, 0.18), transparent 72%);
+  content: "";
+  filter: blur(6px);
 }
 
-.progressStatusContent {
-  animation: status-change 0.2s ease-out;
+.secondaryActionSlot {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
 }
 
-.progressHeadline {
-  margin: 0;
-  color: #333d4b;
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1.4;
-  letter-spacing: -0.015em;
+.secondaryAction,
+.secondaryActionPlaceholder {
+  width: 70px;
+  min-height: 56px;
 }
 
-.progressDetail {
-  margin: 5px 0 0;
-  color: #6b7684;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-.secondaryActions {
+.secondaryAction {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  margin-top: 4px;
-}
-
-.textAction {
-  min-width: 72px;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 0;
-  background: transparent;
-  color: #299f9a;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 4px;
+  border: 1px solid rgba(117, 78, 42, 0.17);
+  border-radius: 22px;
+  background: rgba(255, 232, 187, 0.7);
+  box-shadow:
+    0 4px 10px rgba(82, 49, 26, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+  color: #604226;
   font: inherit;
-  font-size: 14px;
-  font-weight: 700;
   cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.textAction:disabled {
-  color: #8b95a1;
+.secondaryAction svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.secondaryAction span {
+  max-width: 62px;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.secondaryAction:disabled {
   cursor: wait;
-}
-
-.actionDivider {
-  color: #b0b8c1;
+  filter: saturate(0.42);
+  opacity: 0.68;
 }
 
 .inviteFeedback {
-  min-height: 18px;
-  margin: -2px 0 0;
-  color: #6b7684;
-  font-size: 12px;
-  font-weight: 500;
+  position: absolute;
+  right: 12px;
+  bottom: calc(100% - 4px);
+  left: 12px;
+  min-height: 16px;
+  margin: 0;
+  color: #216e68;
+  font-size: 11px;
+  font-weight: 800;
   text-align: center;
-}
-
-.bottomCTA {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 50;
-  width: min(100%, 480px);
-  padding: 10px var(--screen-padding-x)
-    calc(12px + env(safe-area-inset-bottom, 0px));
-  margin: 0 auto;
-  border-top: 1px solid rgba(111, 98, 78, 0.1);
-  background: rgba(251, 247, 240, 0.98);
-  box-shadow: 0 -8px 18px rgba(92, 63, 35, 0.04);
+  text-shadow: 0 1px 1px rgba(255, 245, 217, 0.84);
 }
 
 @keyframes status-change {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(4px) scale(0.98);
   }
+
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-@media (max-height: 680px) {
+@media (max-height: 700px) {
   .header {
-    padding-top: 12px;
+    padding-top: calc(7px + env(safe-area-inset-top, 0px));
+    padding-bottom: 2px;
   }
 
-  .content {
-    padding-top: 26px;
+  .progressStatus {
+    min-height: 48px;
   }
 
-  .secondaryActions {
-    margin-top: 0;
+  .progressStatusContent {
+    min-height: 42px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .visualSection {
+    min-height: 390px;
+  }
+
+  .actionDock {
+    margin-top: -8px;
+  }
+}
+
+@media (max-width: 350px) {
+  .header {
+    grid-template-columns: 44px minmax(0, 1fr) 52px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .homeButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .dayBadge {
+    width: 52px;
+  }
+
+  .actionDock {
+    grid-template-columns: minmax(64px, 1fr) 126px minmax(64px, 1fr);
+    gap: 2px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .secondaryAction,
+  .secondaryActionPlaceholder {
+    width: 64px;
   }
 }
 
 @media (min-width: 481px) {
   .page {
-    border-right: 1px solid rgba(154, 111, 65, 0.1);
-    border-left: 1px solid rgba(154, 111, 65, 0.1);
+    border-right: 1px solid rgba(125, 82, 42, 0.14);
+    border-left: 1px solid rgba(125, 82, 42, 0.14);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .heroSuccessLight,
-  .heroPerfectLight,
+  .statusLight,
   .progressStatusContent {
     transition: none;
     animation: none;
   }
 }
 
-.reducedMotion .heroSuccessLight,
-.reducedMotion .heroPerfectLight,
+.reducedMotion .statusLight,
 .reducedMotion .progressStatusContent {
   transition: none;
   animation: none;

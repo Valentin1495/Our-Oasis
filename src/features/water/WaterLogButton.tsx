@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useOasisStore } from "../../lib/store/useOasisStore";
 import type { DailyHydration } from "../../types";
+import styles from "./WaterLogButton.module.css";
 
 interface Props {
   hydration: DailyHydration | null;
@@ -17,12 +18,8 @@ export function WaterLogButton({
   hydration,
   isVisualFeedbackPlaying = false,
 }: Props) {
-  const {
-    logWaterCup,
-    isLoggingWater,
-    waterLogFeedback,
-    waterLogFeedbackId,
-  } = useOasisStore();
+  const { logWaterCup, isLoggingWater, waterLogFeedback, waterLogFeedbackId } =
+    useOasisStore();
   const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
@@ -48,35 +45,16 @@ export function WaterLogButton({
     : null;
 
   return (
-    <div>
+    <div className={styles.container}>
       {(hydration || (showFeedback && feedbackMessage)) && (
-        <div
-          style={{
-            marginBottom: "8px",
-            minHeight: "18px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-          }}
-        >
+        <div className={styles.status}>
           {showFeedback && feedbackMessage ? (
             <div
               key={waterLogFeedbackId}
+              className={styles.feedback}
               role="status"
               aria-live="polite"
               aria-atomic="true"
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "center",
-                gap: "5px",
-                color: "var(--oasis-mint-500)",
-                fontSize: "13px",
-                fontWeight: 700,
-                lineHeight: 1.4,
-                animation: "fade-in 0.2s ease",
-              }}
             >
               <span aria-hidden="true">
                 {waterLogFeedback?.kind === "personal" ? "✓" : "💧"}
@@ -84,14 +62,7 @@ export function WaterLogButton({
               <div>
                 <div>{feedbackMessage}</div>
                 {waterLogFeedback?.warning && (
-                  <div
-                    style={{
-                      marginTop: "2px",
-                      color: "var(--color-label-alternative)",
-                      fontSize: "12px",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <div className={styles.warning}>
                     {waterLogFeedback.warning}
                   </div>
                 )}
@@ -100,37 +71,20 @@ export function WaterLogButton({
           ) : (
             hydration && (
               <div
+                className={styles.summary}
                 aria-label={`공동 기여 ${drops}/4${isContributionComplete ? " 완료" : ""}, 오늘 ${formatMl(consumedMl)}${goalMl > 0 ? ` / 목표 ${formatMl(goalMl)}` : ""}${goalComplete ? " 완료" : ""}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  color: "var(--color-label-assistive)",
-                  fontSize: "12px",
-                  lineHeight: 1.5,
-                  whiteSpace: "nowrap",
-                }}
               >
                 <span
-                  style={{
-                    color: isContributionComplete
-                      ? "var(--oasis-mint-500)"
-                      : undefined,
-                    fontWeight: isContributionComplete ? 700 : 500,
-                  }}
+                  className={
+                    isContributionComplete ? styles.summaryComplete : undefined
+                  }
                 >
                   공동 기여 {drops}/4
                   {isContributionComplete && " ✓"}
                 </span>
                 <span aria-hidden="true">·</span>
                 <span
-                  style={{
-                    color: goalComplete
-                      ? "var(--oasis-mint-500)"
-                      : undefined,
-                    fontWeight: goalComplete ? 700 : 500,
-                  }}
+                  className={goalComplete ? styles.summaryComplete : undefined}
                 >
                   오늘 {formatMl(consumedMl)}
                   {goalMl > 0 && ` / ${formatMl(goalMl)}`}
@@ -144,6 +98,7 @@ export function WaterLogButton({
 
       <button
         type="button"
+        className={styles.springButton}
         onClick={logWaterCup}
         disabled={isButtonDisabled}
         aria-label={
@@ -153,27 +108,22 @@ export function WaterLogButton({
               ? "물 섭취를 개인 기록에 추가하기, 오늘 공동 기여 4개 완료"
               : `공유 오아시스에 물 한 잔 채우기, 오늘 공동 기여 ${drops}/4`
         }
-        style={{
-          width: "100%",
-          padding: "18px",
-          backgroundColor: isButtonDisabled
-            ? "var(--oasis-mint-300)"
-            : "var(--oasis-mint-500)",
-          color: "#fff",
-          fontSize: "17px",
-          fontWeight: 700,
-          border: "none",
-          borderRadius: "14px",
-          cursor: isButtonDisabled ? "wait" : "pointer",
-          transition: "background-color 0.15s ease, transform 0.1s ease",
-          letterSpacing: "-0.01em",
-        }}
       >
-        {isButtonDisabled
-          ? "기록 중..."
-          : isContributionComplete
-            ? "물 한 잔 기록하기"
-            : "물 한 잔 채우기"}
+        <span className={styles.springRim} aria-hidden="true">
+          <span className={styles.springWater}>
+            <svg viewBox="0 0 32 40">
+              <path d="M16 1C12 8 4 17 4 25a12 12 0 0 0 24 0C28 17 20 8 16 1Z" />
+              <path d="M10 27c1 4 4 6 8 6" />
+            </svg>
+          </span>
+        </span>
+        <span className={styles.buttonLabel}>
+          {isButtonDisabled
+            ? "기록 중..."
+            : isContributionComplete
+              ? "물 한 잔 기록하기"
+              : "물 한 잔 채우기"}
+        </span>
       </button>
     </div>
   );

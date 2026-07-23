@@ -24,12 +24,8 @@ import {
   getTodayMaxDrops,
   useOasisSceneController,
   type OasisSceneMember,
-  type OasisSceneVariant,
 } from "../features/oasis";
-import {
-  canInviteMoreMembers,
-  copyInviteLink,
-} from "../features/room";
+import { canInviteMoreMembers, copyInviteLink } from "../features/room";
 import { UndoBanner, WaterLogButton } from "../features/water";
 import { useOasisStore } from "../lib/store/useOasisStore";
 import styles from "./OasisMainPage.module.css";
@@ -58,10 +54,9 @@ export function OasisMainPage() {
   );
   const [scenePreviewReducedMotion, setScenePreviewReducedMotion] =
     useState(false);
-  const [sceneVariant, setSceneVariant] =
-    useState<OasisSceneVariant>("shared");
-  const [scenePreviewMembers, setScenePreviewMembers] =
-    useState<OasisSceneMember[] | null>(null);
+  const [scenePreviewMembers, setScenePreviewMembers] = useState<
+    OasisSceneMember[] | null
+  >(null);
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>("idle");
 
@@ -97,15 +92,11 @@ export function OasisMainPage() {
   }, [roomId, subscribeToRoom, unsubscribeFromRoom]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    );
-    const updatePreference = () =>
-      setSystemReducedMotion(mediaQuery.matches);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setSystemReducedMotion(mediaQuery.matches);
     updatePreference();
     mediaQuery.addEventListener("change", updatePreference);
-    return () =>
-      mediaQuery.removeEventListener("change", updatePreference);
+    return () => mediaQuery.removeEventListener("change", updatePreference);
   }, []);
 
   useEffect(
@@ -117,8 +108,7 @@ export function OasisMainPage() {
     [],
   );
 
-  const isScenePreview =
-    import.meta.env.DEV && scenePreviewPercent !== null;
+  const isScenePreview = import.meta.env.DEV && scenePreviewPercent !== null;
   const targetSceneSnapshot = useMemo(() => {
     if (!oasisState) return null;
 
@@ -156,10 +146,9 @@ export function OasisMainPage() {
   ]);
   const effectiveReducedMotion =
     scenePreviewReducedMotion || systemReducedMotion;
-  const sceneController = useOasisSceneController(
-    targetSceneSnapshot,
-    { reducedMotion: effectiveReducedMotion },
-  );
+  const sceneController = useOasisSceneController(targetSceneSnapshot, {
+    reducedMotion: effectiveReducedMotion,
+  });
 
   if (!roomId) return null;
 
@@ -190,42 +179,29 @@ export function OasisMainPage() {
   // oasisState가 있으면 위의 useMemo도 항상 snapshot을 만든다.
   if (!targetSceneSnapshot) return null;
 
-  const { room, members, sharedProgressPercent } =
-    oasisState;
+  const { room, members, sharedProgressPercent } = oasisState;
   const daysLeft = Math.max(0, room.durationDays - room.dayIndex);
-  const {
-    allMembersParticipatedToday,
-    isFinalOasisUnlocked,
-    isSpecialCharacterSettled,
-  } = getOasisAchievements(oasisState);
   const displayedSceneSnapshot =
     sceneController.displayedSnapshot ?? targetSceneSnapshot;
-  const displayedScenePercent =
-    displayedSceneSnapshot.progress.displayPercent;
+  const displayedScenePercent = displayedSceneSnapshot.progress.displayPercent;
   const displayedOasisStatus = getOasisStatus(displayedScenePercent);
   const maxDrops = getTodayMaxDrops(oasisState);
-  const displayedTotalDrops =
-    displayedSceneSnapshot.progress.totalDrops;
+  const displayedTotalDrops = displayedSceneSnapshot.progress.totalDrops;
   const progressMessage = deriveOasisProgressMessage({
     percent: displayedScenePercent,
     totalDrops: displayedTotalDrops,
     maxDrops,
   });
-  const canInvite = canInviteMoreMembers(
-    members.length,
-    room.maxMembers,
-  );
+  const canInvite = canInviteMoreMembers(members.length, room.maxMembers);
 
   const exitScenePreview = () => {
     setScenePreviewPercent(null);
     setScenePreviewMembers(null);
     setScenePreviewReducedMotion(false);
-    setSceneVariant("shared");
   };
 
   const getDebugMembers = (count: number): OasisSceneMember[] => {
-    const unsortedMembers =
-      scenePreviewMembers ?? targetSceneSnapshot.members;
+    const unsortedMembers = scenePreviewMembers ?? targetSceneSnapshot.members;
     const sourceMembers = [...unsortedMembers].sort((left, right) => {
       if (left.id === targetSceneSnapshot.currentMemberId) return -1;
       if (right.id === targetSceneSnapshot.currentMemberId) return 1;
@@ -255,9 +231,7 @@ export function OasisMainPage() {
     );
     setScenePreviewMembers(membersForPreview);
     setScenePreviewPercent(
-      maxPreviewDrops > 0
-        ? (totalPreviewDrops / maxPreviewDrops) * 100
-        : 0,
+      maxPreviewDrops > 0 ? (totalPreviewDrops / maxPreviewDrops) * 100 : 0,
     );
   };
 
@@ -274,7 +248,6 @@ export function OasisMainPage() {
 
     setScenePreviewMembers(comparisonMembers);
     setScenePreviewPercent((totalDrops / (comparisonMembers.length * 4)) * 100);
-    setSceneVariant("shared");
   };
 
   const handlePreviewContribution = (
@@ -308,8 +281,7 @@ export function OasisMainPage() {
       index === actorIndex
         ? {
             ...member,
-            contributedDropsToday:
-              member.contributedDropsToday + addedDrops,
+            contributedDropsToday: member.contributedDropsToday + addedDrops,
             hasWaterRecordToday: true,
           }
         : member,
@@ -327,8 +299,7 @@ export function OasisMainPage() {
     const source = targetSceneSnapshot;
     const actorIndex = source.members.findIndex(
       (member) =>
-        member.id !== source.currentMemberId &&
-        !member.hasWaterRecordToday,
+        member.id !== source.currentMemberId && !member.hasWaterRecordToday,
     );
     if (actorIndex < 0) return;
     setScenePreviewMembers(
@@ -347,9 +318,7 @@ export function OasisMainPage() {
     );
     const maxPreviewDrops = sourceMembers.length * 4;
     const targetDrops =
-      threshold === 75
-        ? Math.ceil(maxPreviewDrops * 0.75)
-        : maxPreviewDrops;
+      threshold === 75 ? Math.ceil(maxPreviewDrops * 0.75) : maxPreviewDrops;
     const beforeDrops = Math.max(0, targetDrops - 1);
     let remaining = beforeDrops;
     const beforeMembers = sourceMembers.map((member) => {
@@ -370,9 +339,7 @@ export function OasisMainPage() {
     const safeActorIndex =
       actorIndex >= 0
         ? actorIndex
-        : beforeMembers.findIndex(
-            (member) => member.contributedDropsToday < 4,
-          );
+        : beforeMembers.findIndex((member) => member.contributedDropsToday < 4);
 
     setScenePreviewMembers(beforeMembers);
     setScenePreviewPercent((beforeDrops / maxPreviewDrops) * 100);
@@ -383,8 +350,7 @@ export function OasisMainPage() {
           index === safeActorIndex
             ? {
                 ...member,
-                contributedDropsToday:
-                  member.contributedDropsToday + 1,
+                contributedDropsToday: member.contributedDropsToday + 1,
                 hasWaterRecordToday: true,
               }
             : member,
@@ -425,112 +391,138 @@ export function OasisMainPage() {
 
   return (
     <ScreenContainer
-      hasBottomCTA
-      className={`${styles.page} ${scenePreviewReducedMotion ? styles.reducedMotion : ""}`}
+      className={`${styles.page} ${
+        displayedOasisStatus === "PERFECT_SUCCESS"
+          ? styles.perfectSuccess
+          : displayedOasisStatus === "SHARED_SUCCESS"
+            ? styles.sharedSuccess
+            : ""
+      } ${scenePreviewReducedMotion ? styles.reducedMotion : ""}`}
       style={
         {
           height: "100dvh",
           minHeight: 0,
           overflowY: "auto",
           overscrollBehaviorY: "contain",
-          backgroundColor: "#fbf7f0",
-          "--bottom-cta-height": `${bottomCTAHeight}px`,
+          backgroundColor: "#c78e57",
+          "--stage-action-height": `${bottomCTAHeight}px`,
         } as CSSProperties
       }
     >
-      <div
-        className={styles.desertHero}
-        data-oasis-status={displayedOasisStatus}
-      >
-        <span className={styles.heroTextureVeil} aria-hidden="true" />
-        <span className={styles.heroSuccessLight} aria-hidden="true" />
-        <span className={styles.heroPerfectLight} aria-hidden="true" />
+      <span className={styles.textureVeil} aria-hidden="true" />
+      <span className={styles.statusLight} aria-hidden="true" />
 
-        <header className={styles.header}>
-          <div className={styles.headerCopy}>
-            <h1 className={styles.title}>우리들의 오아시스</h1>
-            <p className={styles.subtitle}>
-              {room.name} · 오늘 친구들과 함께 채워요
-            </p>
-          </div>
-          <span
-            className={styles.dayBadge}
-            aria-label={`챌린지 ${daysLeft}일 남음`}
-          >
-            D-{daysLeft}
-          </span>
-        </header>
-
-        <section
-          className={styles.visualSection}
-          aria-label="오늘의 공유 오아시스"
+      <header className={styles.header}>
+        <button
+          type="button"
+          className={styles.homeButton}
+          aria-label="참여 중인 오아시스 목록으로 이동"
+          onClick={() => navigate("/")}
         >
-          <OasisScene
-            snapshot={displayedSceneSnapshot}
-            event={sceneController.activeEvent}
-            phase={sceneController.phase}
-            impactIndex={sceneController.impactIndex}
-            announcement={sceneController.announcement}
-            showSpecialCharacter={
-              !isScenePreview &&
-              (allMembersParticipatedToday || isSpecialCharacterSettled)
-            }
-            isFinalOasisUnlocked={!isScenePreview && isFinalOasisUnlocked}
-            reducedMotion={effectiveReducedMotion}
-            variant={sceneVariant}
-            isAnimating={sceneController.isAnimating}
-            isInteractionDisabled={isScenePreview || isLoggingWater}
-            onGiveWater={isScenePreview ? undefined : logWaterCup}
-            onTravelComplete={sceneController.completeTravel}
-            onImpactComplete={sceneController.completeImpact}
-          />
-        </section>
-      </div>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8Z" />
+          </svg>
+        </button>
 
-      <main className={styles.content}>
-        <section className={styles.progressStatus}>
-          <div
-            key={`${progressMessage.headline}-${progressMessage.detail ?? ""}`}
-            className={styles.progressStatusContent}
-          >
-            <h2 className={styles.progressHeadline}>
-              {progressMessage.headline}
-            </h2>
-            {progressMessage.detail && (
-              <p className={styles.progressDetail}>
-                {progressMessage.detail}
-              </p>
-            )}
-          </div>
-        </section>
+        <div className={styles.headerCopy}>
+          <h1 className={styles.title}>{room.name}</h1>
+          <p className={styles.subtitle}>오늘의 공동 오아시스</p>
+        </div>
 
-        {oasisError && <InlineError message={oasisError} />}
+        <span
+          className={styles.dayBadge}
+          aria-label={`챌린지 ${daysLeft}일 남음`}
+        >
+          D-{daysLeft}
+        </span>
+      </header>
 
-        <nav className={styles.secondaryActions} aria-label="오아시스 메뉴">
+      <section className={styles.progressStatus} aria-live="polite">
+        <div
+          key={`${progressMessage.headline}-${progressMessage.detail ?? ""}`}
+          className={styles.progressStatusContent}
+        >
+          <span className={styles.progressMark} aria-hidden="true">
+            {displayedOasisStatus === "PERFECT_SUCCESS"
+              ? "✦"
+              : displayedOasisStatus === "SHARED_SUCCESS"
+                ? "✓"
+                : "💧"}
+          </span>
+          <span className={styles.progressCopy}>
+            <strong>{progressMessage.headline}</strong>
+            {progressMessage.detail && <small>{progressMessage.detail}</small>}
+          </span>
+        </div>
+      </section>
+
+      {oasisError && (
+        <div className={styles.inlineError}>
+          <InlineError message={oasisError} />
+        </div>
+      )}
+
+      <main className={styles.visualSection} aria-label="오늘의 공유 오아시스">
+        <OasisScene
+          snapshot={displayedSceneSnapshot}
+          event={sceneController.activeEvent}
+          phase={sceneController.phase}
+          impactIndex={sceneController.impactIndex}
+          announcement={sceneController.announcement}
+          reducedMotion={effectiveReducedMotion}
+          isAnimating={sceneController.isAnimating}
+          isInteractionDisabled={isScenePreview || isLoggingWater}
+          onGiveWater={isScenePreview ? undefined : logWaterCup}
+          onTravelComplete={sceneController.completeTravel}
+          onImpactComplete={sceneController.completeImpact}
+        />
+      </main>
+
+      <nav
+        ref={bottomCTARef}
+        className={styles.actionDock}
+        aria-label="오아시스 메뉴"
+      >
+        <div className={styles.secondaryActionSlot}>
           <button
             type="button"
-            className={styles.textAction}
+            className={styles.secondaryAction}
             onClick={() => setShowDayResult(true)}
           >
-            오늘 기록
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+              <path d="m8 14 2.5 2.5L16 11" />
+            </svg>
+            <span>오늘 기록</span>
           </button>
+        </div>
 
-          {canInvite && (
-            <>
-              <span className={styles.actionDivider} aria-hidden="true">
-                ·
-              </span>
-              <button
-                type="button"
-                className={styles.textAction}
-                onClick={() => void handleInvite()}
-                disabled={inviteStatus === "copying"}
-              >
-                {inviteLabel}
-              </button>
-            </>
+        <WaterLogButton
+          hydration={oasisState.myHydration}
+          isVisualFeedbackPlaying={sceneController.isAnimating}
+        />
+
+        <div className={styles.secondaryActionSlot}>
+          {canInvite ? (
+            <button
+              type="button"
+              className={styles.secondaryAction}
+              onClick={() => void handleInvite()}
+              disabled={inviteStatus === "copying"}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="8" r="3" />
+                <path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M18 7v6M15 10h6" />
+              </svg>
+              <span>{inviteLabel}</span>
+            </button>
+          ) : (
+            <span
+              className={styles.secondaryActionPlaceholder}
+              aria-hidden="true"
+            />
           )}
-        </nav>
+        </div>
 
         <p
           className={styles.inviteFeedback}
@@ -544,14 +536,7 @@ export function OasisMainPage() {
               ? "링크를 복사하지 못했어요"
               : ""}
         </p>
-      </main>
-
-      <div ref={bottomCTARef} className={styles.bottomCTA}>
-        <WaterLogButton
-          hydration={oasisState.myHydration}
-          isVisualFeedbackPlaying={sceneController.isAnimating}
-        />
-      </div>
+      </nav>
 
       <UndoBanner bottomOffset={bottomCTAHeight} />
 
@@ -567,7 +552,6 @@ export function OasisMainPage() {
           actualPercent={sharedProgressPercent}
           previewPercent={scenePreviewPercent}
           reducedMotion={scenePreviewReducedMotion}
-          sceneVariant={sceneVariant}
           memberCount={targetSceneSnapshot.members.length}
           onPreviewPercentChange={setScenePreviewPercent}
           onMemberCountChange={handlePreviewMemberCountChange}
@@ -576,7 +560,6 @@ export function OasisMainPage() {
           onSimulateParticipation={handlePreviewParticipation}
           onSimulateThreshold={handlePreviewThreshold}
           onReducedMotionChange={setScenePreviewReducedMotion}
-          onSceneVariantChange={setSceneVariant}
           onExitPreview={exitScenePreview}
         />
       )}

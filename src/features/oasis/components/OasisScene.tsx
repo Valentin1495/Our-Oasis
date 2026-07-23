@@ -1,6 +1,3 @@
-import { getOasisStage } from "../oasisRules";
-import { ConceptATerrarium } from "../scene/ConceptATerrarium";
-import { ConceptBWatercolor } from "../scene/ConceptBWatercolor";
 import {
   SharedOasisScene,
   type Member as SharedOasisMember,
@@ -12,9 +9,6 @@ import type {
 import type { OasisSceneSnapshot } from "../scene/oasisSceneModel";
 import { assignMemberAvatarImages } from "../scene/shared/memberAvatarImage";
 import { getMemberIslandImage } from "../scene/shared/memberIslandImage";
-import { LegacyOasisScene } from "./LegacyOasisScene";
-
-export type OasisSceneVariant = "shared" | "legacy" | "concept-a" | "concept-b";
 
 interface Props {
   snapshot: OasisSceneSnapshot;
@@ -22,10 +16,7 @@ interface Props {
   phase?: OasisSceneSequencePhase;
   impactIndex?: number;
   announcement?: string;
-  showSpecialCharacter?: boolean;
-  isFinalOasisUnlocked?: boolean;
   reducedMotion?: boolean;
-  variant?: OasisSceneVariant;
   isAnimating?: boolean;
   isInteractionDisabled?: boolean;
   onGiveWater?: () => void | Promise<void>;
@@ -51,8 +42,7 @@ function getSharedOasisMembers(
 }
 
 /**
- * 공유형 장면을 기본으로 렌더링하고 개발 패널의 이전 컨셉 비교를 지원한다.
- * shared 장면의 표시 퍼센트와 멤버 사실 상태를 PNG 표현 모델로 변환한다.
+ * 서버 장면 snapshot의 퍼센트와 멤버 사실 상태를 공유 오아시스 표현으로 변환한다.
  */
 export function OasisScene({
   snapshot,
@@ -60,10 +50,7 @@ export function OasisScene({
   phase = "idle",
   impactIndex = 0,
   announcement = "",
-  showSpecialCharacter = false,
-  isFinalOasisUnlocked = false,
   reducedMotion = false,
-  variant = "shared",
   isAnimating = false,
   isInteractionDisabled = false,
   onGiveWater,
@@ -71,40 +58,6 @@ export function OasisScene({
   onImpactComplete,
 }: Props) {
   const percent = snapshot.progress.displayPercent;
-
-  if (variant === "legacy") {
-    return (
-      <LegacyOasisScene
-        stage={getOasisStage(percent)}
-        sharedProgressPercent={percent}
-        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
-        isFullComplete={snapshot.progress.isPerfect}
-        showSpecialCharacter={showSpecialCharacter}
-        isFinalOasisUnlocked={isFinalOasisUnlocked}
-        reducedMotion={reducedMotion}
-      />
-    );
-  }
-
-  if (variant === "concept-a") {
-    return (
-      <ConceptATerrarium
-        percent={percent}
-        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
-        reducedMotion={reducedMotion}
-      />
-    );
-  }
-
-  if (variant === "concept-b") {
-    return (
-      <ConceptBWatercolor
-        percent={percent}
-        dropAnimationTick={event?.kind === "contribution" ? 1 : 0}
-        reducedMotion={reducedMotion}
-      />
-    );
-  }
 
   return (
     <SharedOasisScene
