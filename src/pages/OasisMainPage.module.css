@@ -182,37 +182,41 @@
   min-height: 54px;
   align-items: center;
   justify-content: center;
+  margin-top: clamp(24px, 5dvh, 48px);
   padding: 0 24px;
 }
 
 .progressStatusContent {
   display: flex;
   max-width: 100%;
-  min-height: 46px;
+  min-height: 44px;
   align-items: center;
-  gap: 9px;
-  padding: 7px 14px 7px 9px;
-  border: 1px solid rgba(121, 83, 46, 0.15);
-  border-radius: 999px;
-  background: rgba(255, 239, 207, 0.76);
-  box-shadow:
-    0 5px 13px rgba(89, 55, 31, 0.11),
-    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  gap: 8px;
+  padding: 6px 18px 6px 8px;
+  background: radial-gradient(
+    ellipse at 48% 50%,
+    rgba(255, 239, 207, 0.58) 0%,
+    rgba(255, 239, 207, 0.25) 62%,
+    transparent 100%
+  );
   animation: status-change 0.22s ease-out;
-  backdrop-filter: blur(7px);
 }
 
 .progressMark {
   display: grid;
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   border-radius: 50%;
-  background: linear-gradient(145deg, #bff8ef, #43beb5);
+  background: linear-gradient(
+    145deg,
+    rgba(191, 248, 239, 0.9),
+    rgba(67, 190, 181, 0.94)
+  );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.64),
-    0 3px 7px rgba(35, 136, 128, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 3px 8px rgba(35, 136, 128, 0.18);
   color: #fff;
   font-size: 14px;
   font-weight: 900;
@@ -242,6 +246,9 @@
   font-weight: 900;
   line-height: 1.3;
   text-overflow: ellipsis;
+  text-shadow:
+    0 1px 1px rgba(255, 247, 224, 0.94),
+    0 0 5px rgba(255, 239, 207, 0.72);
   white-space: nowrap;
 }
 
@@ -253,6 +260,9 @@
   font-weight: 600;
   line-height: 1.3;
   text-overflow: ellipsis;
+  text-shadow:
+    0 1px 1px rgba(255, 247, 224, 0.92),
+    0 0 4px rgba(255, 239, 207, 0.62);
   white-space: nowrap;
 }
 
@@ -271,6 +281,7 @@
   flex-direction: column;
   align-items: center;
   min-height: 390px;
+  padding-top: clamp(8px, 1.8dvh, 18px);
 }
 
 .actionDock {
@@ -391,6 +402,7 @@
 
   .progressStatus {
     min-height: 48px;
+    margin-top: 0;
   }
 
   .progressStatusContent {
@@ -401,6 +413,7 @@
 
   .visualSection {
     min-height: 390px;
+    padding-top: 0;
   }
 
   .actionDock {

@@ -12,9 +12,9 @@ import {
 } from "./oasisSceneEvents";
 import { createOasisSceneSnapshot } from "./oasisSceneModel";
 import {
-  deriveStageRingProgress,
+  deriveOrganicProgress,
   getMemberDockPosition,
-  getWaterDropArc,
+  getMeasuredWaterDropArc,
   SHARED_OASIS_LAYOUT,
 } from "./sharedOasisSceneLayout";
 
@@ -111,49 +111,61 @@ function createContributionEvent(actorId = "me"): OasisSceneEvent {
   return event;
 }
 
-describe("오아시스 스테이지 진행 링", () => {
+describe("오아시스 유기적 진행 표현", () => {
   it.each([
     [0, 0, 0],
     [74, 0.987, 0],
     [75, 1, 0],
+    [76, 1, 0.04],
     [99, 1, 0.96],
     [100, 1, 1],
   ] as const)(
-    "%s%%를 공동 링 %s, 완벽 링 %s로 분리한다",
-    (percent, sharedProgress, perfectProgress) => {
-      expect(deriveStageRingProgress(percent)).toEqual({
-        sharedProgress,
-        perfectProgress,
+    "%s%%를 물길 %s, 생명 빛 %s로 분리한다",
+    (percent, waterwayProgress, lifeProgress) => {
+      expect(deriveOrganicProgress(percent)).toEqual({
+        waterwayProgress,
+        lifeProgress,
       });
     },
   );
 
   it.each([
-    [Number.NaN, { sharedProgress: 0, perfectProgress: 0 }],
-    [Number.POSITIVE_INFINITY, { sharedProgress: 0, perfectProgress: 0 }],
-    [-10, { sharedProgress: 0, perfectProgress: 0 }],
-    [125, { sharedProgress: 1, perfectProgress: 1 }],
+    [Number.NaN, { waterwayProgress: 0, lifeProgress: 0 }],
+    [Number.POSITIVE_INFINITY, { waterwayProgress: 0, lifeProgress: 0 }],
+    [-10, { waterwayProgress: 0, lifeProgress: 0 }],
+    [125, { waterwayProgress: 1, lifeProgress: 1 }],
   ])("비정상 입력 %s를 안전하게 정규화한다", (input, expected) => {
-    expect(deriveStageRingProgress(input as number)).toEqual(expected);
+    expect(deriveOrganicProgress(input as number)).toEqual(expected);
   });
 
   it.each([
     [0, "0", "0"],
     [75, "1", "0"],
+    [76, "1", "0.04"],
     [100, "1", "1"],
   ])(
-    "%s%% 진행을 두 SVG 링의 데이터로 렌더링한다",
-    (percent, shared, perfect) => {
+    "%s%% 진행을 오아시스의 통합 후광으로 렌더링한다",
+    (percent, waterway, lifeProgress) => {
       const markup = renderScene({ percent });
 
-      expect(markup).toContain(
-        `data-stage-ring="shared" data-ring-progress="${shared}"`,
-      );
-      expect(markup).toContain(
-        `data-stage-ring="perfect" data-ring-progress="${perfect}"`,
-      );
+      expect(markup).toContain(`--waterway-progress:${waterway}`);
+      expect(markup).toContain(`data-life-progress="${lifeProgress}"`);
+      expect(markup).toContain("shared-oasis-scene__life-aura");
+      expect(markup).toContain("shared-oasis-scene__water-sheen");
+      expect(markup).not.toContain("shared-oasis-scene__life-crown");
     },
   );
+
+  it("상시 물길 대신 실제 위치 측정을 위한 보이지 않는 기준점을 렌더링한다", () => {
+    const markup = renderScene({ percent: 50 });
+
+    expect(
+      markup.match(/class="shared-oasis-scene__member-water-origin"/g),
+    ).toHaveLength(2);
+    expect(markup).toContain("shared-oasis-scene__oasis-water-target");
+    expect(markup).not.toContain("shared-oasis-scene__waterways");
+    expect(markup).not.toContain("member-waterway-connector");
+  });
 });
 
 describe("오아시스 스테이지 상태", () => {
@@ -170,21 +182,17 @@ describe("오아시스 스테이지 상태", () => {
     expect(markup.match(/data-oasis-layer=/g)).toHaveLength(3);
   });
 
-  it("75% 공동 성공과 100% 완벽 성공을 서로 다른 이미지와 링으로 표현한다", () => {
+  it("75% 공동 성공과 100% 완벽 성공을 서로 다른 이미지와 생명 빛으로 표현한다", () => {
     const sharedSuccess = renderScene({ percent: 75 });
     const perfectSuccess = renderScene({ percent: 100 });
 
     expect(sharedSuccess).toContain("oasis_lush");
-    expect(sharedSuccess).toContain(
-      'data-stage-ring="perfect" data-ring-progress="0"',
-    );
-    expect(sharedSuccess).not.toContain("shared-oasis-scene__perfect-crown");
+    expect(sharedSuccess).toContain('data-life-progress="0"');
+    expect(sharedSuccess).toContain("shared-oasis-scene__life-aura");
 
     expect(perfectSuccess).toContain("oasis_mystic");
-    expect(perfectSuccess).toContain(
-      'data-stage-ring="perfect" data-ring-progress="1"',
-    );
-    expect(perfectSuccess).toContain("shared-oasis-scene__perfect-crown");
+    expect(perfectSuccess).toContain('data-life-progress="1"');
+    expect(perfectSuccess).toContain("shared-oasis-scene__water-sheen");
   });
 
   it("상태와 달성률을 장면 접근성 이름으로 제공한다", () => {
@@ -293,26 +301,32 @@ describe("멤버 도크", () => {
 });
 
 describe("기여 애니메이션", () => {
-  it.each([
-    ["me", 0],
-    ["friend", 1],
-  ] as const)(
-    "%s의 기여가 해당 도크 위치에서 중앙 오아시스로 이동한다",
-    (actorId, actorIndex) => {
-      const event = createContributionEvent(actorId);
-      const origin = getMemberDockPosition(actorIndex, MEMBERS.length);
-      const path = getWaterDropArc(origin);
-      const markup = renderScene({
-        percent: 75,
-        event,
-        phase: "travel",
-      });
+  it("측정한 픽셀 좌표로 섬에서 오아시스까지 이동 곡선을 만든다", () => {
+    const path = getMeasuredWaterDropArc(
+      { x: 72, y: 480 },
+      { x: 188, y: 170 },
+      580,
+    );
 
-      expect(markup).toContain(`data-actor-member-id="${actorId}"`);
-      expect(markup).toContain(`data-path-left="${path.left.join(",")}"`);
-      expect(markup).toContain(`data-path-top="${path.top.join(",")}"`);
-    },
-  );
+    expect(path.left[0]).toBe("72px");
+    expect(path.left[2]).toBe("188px");
+    expect(path.top[0]).toBe("480px");
+    expect(path.top[2]).toBe("170px");
+    expect(Number.parseFloat(path.top[1])).toBeLessThan((480 + 170) / 2);
+  });
+
+  it("travel 단계에서도 고정 좌표 경로나 상시 물길을 서버 렌더링하지 않는다", () => {
+    const markup = renderScene({
+      percent: 75,
+      event: createContributionEvent("friend"),
+      phase: "travel",
+    });
+
+    expect(markup).toContain("shared-oasis-scene__member-water-origin");
+    expect(markup).toContain("shared-oasis-scene__oasis-water-target");
+    expect(markup).not.toContain("data-path-left");
+    expect(markup).not.toContain("shared-oasis-scene__waterways");
+  });
 
   it("impact 단계에 이벤트별 잔물결을 렌더링한다", () => {
     const event = createContributionEvent();

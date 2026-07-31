@@ -18,6 +18,7 @@ interface Props {
   isCurrentMember: boolean;
   isSourceActive: boolean;
   interactionDisabled: boolean;
+  waterOriginRef?: (node: HTMLSpanElement | null) => void;
   onGiveWater?: () => void | Promise<void>;
 }
 
@@ -32,6 +33,7 @@ export function MemberIsland({
   isCurrentMember,
   isSourceActive,
   interactionDisabled,
+  waterOriginRef,
   onGiveWater,
 }: Props) {
   const normalizedDrops = normalizeMemberDrops(drops);
@@ -40,6 +42,7 @@ export function MemberIsland({
     hasWaterRecordToday,
   });
   const accent = getMemberAccent(id);
+  const waterOriginSide = position.xPercent <= 50 ? "right" : "left";
 
   const content: ReactNode = (
     <>
@@ -56,6 +59,11 @@ export function MemberIsland({
           className="shared-oasis-scene__member-island"
           src={islandImage}
           alt=""
+        />
+        <span
+          ref={waterOriginRef}
+          className="shared-oasis-scene__member-water-origin"
+          data-water-origin-side={waterOriginSide}
         />
         <span className="shared-oasis-scene__member-avatar">
           <img src={avatarImage} alt="" />

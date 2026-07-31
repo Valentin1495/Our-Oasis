@@ -1,4 +1,11 @@
-import type { CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { MotionConfig, motion } from "motion/react";
 import oasisDryImage from "./shared/assets/oasis_dry.png";
 import oasisLushImage from "./shared/assets/oasis_lush.png";
@@ -15,10 +22,11 @@ import {
 } from "./oasisState";
 import { MemberIsland } from "./shared/MemberIsland";
 import {
-  deriveStageRingProgress,
+  deriveOrganicProgress,
   getMemberDockPosition,
-  getWaterDropArc,
+  getMeasuredWaterDropArc,
   SHARED_OASIS_LAYOUT,
+  type WaterDropArc,
 } from "./sharedOasisSceneLayout";
 import "./SharedOasisScene.css";
 
@@ -49,6 +57,8 @@ export interface SharedOasisSceneProps {
 
 const WATER_TRAVEL_DURATION_SECONDS = OASIS_SCENE_TIMING.travelDuration / 1000;
 const AURA_IMPACT_DURATION_SECONDS = OASIS_SCENE_TIMING.impactDuration / 1000;
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const OASIS_LAYERS: ReadonlyArray<{
   status: OasisStatus;
@@ -83,26 +93,138 @@ export function SharedOasisScene({
   const normalizedProgress = normalizeProgressPercentage(progressPercentage);
   const status = getOasisStatus(normalizedProgress);
   const roundedProgress = Math.round(normalizedProgress);
-  const ringProgress = deriveStageRingProgress(normalizedProgress);
+  const organicProgress = deriveOrganicProgress(normalizedProgress);
   const dropActorMemberId =
     event?.dropActorMemberIds[impactIndex] ?? event?.actorMemberId ?? null;
-  const dropActorIndex = members.findIndex(
-    (member) => member.id === dropActorMemberId,
+  const sceneRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const oasisWaterTargetRef = useRef<HTMLSpanElement>(null);
+  const memberWaterOriginRefs = useRef(new Map<string, HTMLSpanElement>());
+  const [waterDropArc, setWaterDropArc] = useState<WaterDropArc | null>(null);
+  const registerMemberWaterOrigin = useCallback(
+    (memberId: string, node: HTMLSpanElement | null) => {
+      if (node) {
+        memberWaterOriginRefs.current.set(memberId, node);
+      } else {
+        memberWaterOriginRefs.current.delete(memberId);
+      }
+    },
+    [],
   );
-  const dropOrigin =
-    dropActorIndex >= 0
-      ? getMemberDockPosition(dropActorIndex, members.length)
-      : {
-          xPercent: SHARED_OASIS_LAYOUT.centerXPercent,
-          yPercent: SHARED_OASIS_LAYOUT.dockYPercent,
-        };
-  const waterDropArc = getWaterDropArc(dropOrigin);
   const interactionDisabled =
     isInteractionDisabled || isAnimating || !onGiveWater;
+
+  useIsomorphicLayoutEffect(() => {
+    if (
+      phase !== "travel" ||
+      event?.kind !== "contribution" ||
+      !dropActorMemberId
+    ) {
+      setWaterDropArc(null);
+      return;
+    }
+
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const measure = () => {
+      const sceneRect = scene.getBoundingClientRect();
+      if (sceneRect.width <= 0 || sceneRect.height <= 0) return false;
+
+      const source = memberWaterOriginRefs.current.get(dropActorMemberId);
+      const sourceRect = source?.getBoundingClientRect();
+      const actorElement = Array.from(
+        scene.querySelectorAll<HTMLElement>("[data-member-id]"),
+      ).find((element) => element.dataset.memberId === dropActorMemberId);
+      const actorRect = actorElement?.getBoundingClientRect();
+      const target = oasisWaterTargetRef.current;
+      const targetRect = target?.getBoundingClientRect();
+      const stageRect = stageRef.current?.getBoundingClientRect();
+
+      if (!sourceRect && !actorRect) return false;
+      if (!targetRect && !stageRect) return false;
+
+      const sourcePoint = sourceRect
+        ? {
+            x: sourceRect.left + sourceRect.width / 2 - sceneRect.left,
+            y: sourceRect.top + sourceRect.height / 2 - sceneRect.top,
+          }
+        : {
+            x:
+              (actorRect?.left ?? 0) +
+              (actorRect?.width ?? 0) *
+                ((actorRect?.left ?? 0) + (actorRect?.width ?? 0) / 2 <=
+                sceneRect.left + sceneRect.width / 2
+                  ? 0.74
+                  : 0.26) -
+              sceneRect.left,
+            y:
+              (actorRect?.top ?? 0) +
+              (actorRect?.width ?? 0) * 0.48 -
+              sceneRect.top,
+          };
+      const targetPoint = targetRect
+        ? {
+            x: targetRect.left + targetRect.width / 2 - sceneRect.left,
+            y: targetRect.top + targetRect.height / 2 - sceneRect.top,
+          }
+        : {
+            x:
+              (stageRect?.left ?? 0) +
+              (stageRect?.width ?? 0) / 2 -
+              sceneRect.left,
+            y:
+              (stageRect?.top ?? 0) +
+              (stageRect?.height ?? 0) * 0.53 -
+              sceneRect.top,
+          };
+      const nextArc = getMeasuredWaterDropArc(
+        sourcePoint,
+        targetPoint,
+        sceneRect.height,
+      );
+
+      setWaterDropArc((previousArc) =>
+        previousArc?.left.join() === nextArc.left.join() &&
+        previousArc.top.join() === nextArc.top.join()
+          ? previousArc
+          : nextArc,
+      );
+      return true;
+    };
+
+    measure();
+    let retryCount = 0;
+    let frame = 0;
+    const retryMeasure = () => {
+      if (measure() || retryCount >= 4) return;
+      retryCount += 1;
+      frame = window.requestAnimationFrame(retryMeasure);
+    };
+    frame = window.requestAnimationFrame(retryMeasure);
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    resizeObserver?.observe(scene);
+    if (stageRef.current) resizeObserver?.observe(stageRef.current);
+    const source = memberWaterOriginRefs.current.get(dropActorMemberId);
+    if (source) resizeObserver?.observe(source);
+    const target = oasisWaterTargetRef.current;
+    if (target) resizeObserver?.observe(target);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [dropActorMemberId, event?.kind, phase]);
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
       <section
+        ref={sceneRef}
         className={`shared-oasis-scene ${
           reducedMotion ? "shared-oasis-scene--reduced-motion" : ""
         }`}
@@ -113,8 +235,8 @@ export function SharedOasisScene({
         aria-label={`${STATUS_LABELS[status]}, 공동 달성률 ${roundedProgress}%`}
         style={
           {
-            "--shared-ring-offset": 1 - ringProgress.sharedProgress,
-            "--perfect-ring-offset": 1 - ringProgress.perfectProgress,
+            "--waterway-progress": organicProgress.waterwayProgress,
+            "--life-progress": organicProgress.lifeProgress,
             "--oasis-layer-z": SHARED_OASIS_LAYOUT.oasisZIndex,
             "--oasis-center-x": `${SHARED_OASIS_LAYOUT.centerXPercent}%`,
             "--oasis-center-y": `${SHARED_OASIS_LAYOUT.centerYPercent}%`,
@@ -123,50 +245,25 @@ export function SharedOasisScene({
       >
         <div className="shared-oasis-scene__stage-light" aria-hidden="true" />
 
+        <span
+          className="shared-oasis-scene__water-confluence"
+          data-waterway-complete={organicProgress.waterwayProgress === 1}
+          aria-hidden="true"
+        />
+
         <div
+          ref={stageRef}
           className="shared-oasis-scene__stage"
-          aria-label={`공동 성공 링 ${Math.round(
-            ringProgress.sharedProgress * 100,
-          )}%, 완벽 성공 링 ${Math.round(ringProgress.perfectProgress * 100)}%`}
+          role="img"
+          aria-label={`오아시스 공동 성장 ${Math.round(
+            organicProgress.waterwayProgress * 100,
+          )}%, 생명 빛 ${Math.round(organicProgress.lifeProgress * 100)}%`}
         >
-          <svg
-            className="shared-oasis-scene__rings"
-            viewBox="0 0 320 320"
+          <span
+            className="shared-oasis-scene__life-aura"
+            data-life-progress={organicProgress.lifeProgress}
             aria-hidden="true"
-          >
-            <circle
-              className="shared-oasis-scene__ring-track shared-oasis-scene__ring-track--perfect"
-              cx="160"
-              cy="160"
-              r="148"
-              pathLength="1"
-            />
-            <circle
-              className="shared-oasis-scene__ring shared-oasis-scene__ring--perfect"
-              data-stage-ring="perfect"
-              data-ring-progress={ringProgress.perfectProgress}
-              cx="160"
-              cy="160"
-              r="148"
-              pathLength="1"
-            />
-            <circle
-              className="shared-oasis-scene__ring-track shared-oasis-scene__ring-track--shared"
-              cx="160"
-              cy="160"
-              r="135"
-              pathLength="1"
-            />
-            <circle
-              className="shared-oasis-scene__ring shared-oasis-scene__ring--shared"
-              data-stage-ring="shared"
-              data-ring-progress={ringProgress.sharedProgress}
-              cx="160"
-              cy="160"
-              r="135"
-              pathLength="1"
-            />
-          </svg>
+          />
 
           <div className="shared-oasis-scene__oasis" aria-hidden="true">
             <span className="shared-oasis-scene__oasis-shadow" />
@@ -187,6 +284,17 @@ export function SharedOasisScene({
               );
             })}
           </div>
+
+          <span
+            className="shared-oasis-scene__water-sheen"
+            aria-hidden="true"
+          />
+
+          <span
+            ref={oasisWaterTargetRef}
+            className="shared-oasis-scene__oasis-water-target"
+            aria-hidden="true"
+          />
 
           <div className="shared-oasis-scene__impact-anchor" aria-hidden="true">
             <motion.span
@@ -225,20 +333,6 @@ export function SharedOasisScene({
               />
             )}
           </div>
-
-          {status === "PERFECT_SUCCESS" && (
-            <span
-              className="shared-oasis-scene__perfect-crown"
-              aria-hidden="true"
-            >
-              {Array.from({ length: 6 }, (_, index) => (
-                <i
-                  key={index}
-                  style={{ "--spark-index": index } as CSSProperties}
-                />
-              ))}
-            </span>
-          )}
         </div>
 
         <ul
@@ -262,61 +356,70 @@ export function SharedOasisScene({
                 dropActorMemberId === member.id
               }
               interactionDisabled={interactionDisabled}
+              waterOriginRef={(node) =>
+                registerMemberWaterOrigin(member.id, node)
+              }
               onGiveWater={onGiveWater}
             />
           ))}
         </ul>
 
-        {phase === "travel" && event?.kind === "contribution" && (
-          <motion.span
-            key={`${event.id}-${impactIndex}`}
-            className="shared-oasis-scene__water-drop-path"
-            data-actor-member-id={dropActorMemberId ?? ""}
-            data-drop-index={impactIndex}
-            data-path-left={waterDropArc.left.join(",")}
-            data-path-top={waterDropArc.top.join(",")}
-            initial={{
-              left: waterDropArc.left[0],
-              top: waterDropArc.top[0],
-              opacity: 0.7,
-            }}
-            animate={{
-              left: waterDropArc.left,
-              top: waterDropArc.top,
-              opacity: [0.7, 1, 1, 0.25],
-            }}
-            transition={{
-              left: {
-                duration: WATER_TRAVEL_DURATION_SECONDS,
-                ease: "linear",
-                times: [0, 0.48, 1],
-              },
-              top: {
-                duration: WATER_TRAVEL_DURATION_SECONDS,
-                ease: "easeInOut",
-                times: [0, 0.48, 1],
-              },
-              opacity: {
-                duration: WATER_TRAVEL_DURATION_SECONDS,
-                ease: "linear",
-                times: [0, 0.08, 0.9, 1],
-              },
-            }}
-            onAnimationComplete={onTravelComplete}
-            aria-hidden="true"
-          >
+        {phase === "travel" &&
+          event?.kind === "contribution" &&
+          waterDropArc && (
             <motion.span
-              className="shared-oasis-scene__water-drop"
-              initial={{ rotate: 45, scale: 0.72 }}
-              animate={{ rotate: 45, scale: [0.72, 1.08, 0.8] }}
-              transition={{
-                duration: WATER_TRAVEL_DURATION_SECONDS,
-                ease: "easeInOut",
-                times: [0, 0.48, 1],
+              key={`${event.id}-${impactIndex}`}
+              className="shared-oasis-scene__water-drop-path"
+              data-actor-member-id={dropActorMemberId ?? ""}
+              data-drop-index={impactIndex}
+              data-path-left={waterDropArc.left.join(",")}
+              data-path-top={waterDropArc.top.join(",")}
+              initial={{
+                left: waterDropArc.left[0],
+                top: waterDropArc.top[0],
+                opacity: 0.7,
               }}
-            />
-          </motion.span>
-        )}
+              animate={{
+                left: waterDropArc.left,
+                top: waterDropArc.top,
+                opacity: [0.7, 1, 1, 0.25],
+              }}
+              transition={{
+                left: {
+                  duration: WATER_TRAVEL_DURATION_SECONDS,
+                  ease: "linear",
+                  times: [0, 0.48, 1],
+                },
+                top: {
+                  duration: WATER_TRAVEL_DURATION_SECONDS,
+                  ease: "easeInOut",
+                  times: [0, 0.48, 1],
+                },
+                opacity: {
+                  duration: WATER_TRAVEL_DURATION_SECONDS,
+                  ease: "linear",
+                  times: [0, 0.08, 0.9, 1],
+                },
+              }}
+              onAnimationComplete={onTravelComplete}
+              aria-hidden="true"
+            >
+              <span
+                className="shared-oasis-scene__water-drop-trail"
+                aria-hidden="true"
+              />
+              <motion.span
+                className="shared-oasis-scene__water-drop"
+                initial={{ rotate: 45, scale: 0.72 }}
+                animate={{ rotate: 45, scale: [0.72, 1.08, 0.8] }}
+                transition={{
+                  duration: WATER_TRAVEL_DURATION_SECONDS,
+                  ease: "easeInOut",
+                  times: [0, 0.48, 1],
+                }}
+              />
+            </motion.span>
+          )}
 
         <p
           className="visually-hidden"

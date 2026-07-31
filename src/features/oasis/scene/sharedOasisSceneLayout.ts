@@ -7,14 +7,19 @@ export interface MemberDockPosition extends OasisPoint {
   zIndex: number;
 }
 
+export interface ScenePoint {
+  x: number;
+  y: number;
+}
+
 export interface WaterDropArc {
   left: [string, string, string];
   top: [string, string, string];
 }
 
-export interface StageRingProgress {
-  sharedProgress: number;
-  perfectProgress: number;
+export interface OrganicProgress {
+  waterwayProgress: number;
+  lifeProgress: number;
 }
 
 export const SHARED_OASIS_LAYOUT = {
@@ -35,16 +40,17 @@ function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-export function deriveStageRingProgress(
+export function deriveOrganicProgress(
   progressPercentage: number,
-): StageRingProgress {
+): OrganicProgress {
   const progress = Number.isFinite(progressPercentage)
     ? clamp(progressPercentage, 0, 100)
     : 0;
+  const lifeProgress = round(clamp((progress - 75) / 25, 0, 1));
 
   return {
-    sharedProgress: round(clamp(progress / 75, 0, 1)),
-    perfectProgress: round(clamp((progress - 75) / 25, 0, 1)),
+    waterwayProgress: round(clamp(progress / 75, 0, 1)),
+    lifeProgress,
   };
 }
 
@@ -69,28 +75,32 @@ export function getMemberDockPosition(
   };
 }
 
-export function getWaterDropArc(
-  source: OasisPoint,
-  target: OasisPoint = {
-    xPercent: SHARED_OASIS_LAYOUT.centerXPercent,
-    yPercent: SHARED_OASIS_LAYOUT.centerYPercent,
-  },
+export function getMeasuredWaterDropArc(
+  source: ScenePoint,
+  target: ScenePoint,
+  sceneHeight: number,
 ): WaterDropArc {
+  const horizontalDistance = target.x - source.x;
+  const outwardDirection = Math.sign(source.x - target.x);
+  const curveOffset = Math.min(
+    Math.abs(horizontalDistance) * 0.12,
+    Math.max(8, sceneHeight * 0.035),
+  );
   const controlPoint = {
-    xPercent: (source.xPercent + target.xPercent) / 2,
-    yPercent: Math.max(12, Math.min(source.yPercent, target.yPercent) - 12),
+    x: (source.x + target.x) / 2 + outwardDirection * curveOffset,
+    y: (source.y + target.y) / 2 - Math.max(12, sceneHeight * 0.055),
   };
 
   return {
     left: [
-      `${source.xPercent}%`,
-      `${round(controlPoint.xPercent)}%`,
-      `${target.xPercent}%`,
+      `${round(source.x)}px`,
+      `${round(controlPoint.x)}px`,
+      `${round(target.x)}px`,
     ],
     top: [
-      `${source.yPercent - 7}%`,
-      `${round(controlPoint.yPercent)}%`,
-      `${target.yPercent}%`,
+      `${round(source.y)}px`,
+      `${round(controlPoint.y)}px`,
+      `${round(target.y)}px`,
     ],
   };
 }

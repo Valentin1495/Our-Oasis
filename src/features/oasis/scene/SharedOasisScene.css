@@ -2,7 +2,7 @@
   position: relative;
   isolation: isolate;
   width: 100%;
-  height: clamp(390px, 58dvh, 540px);
+  height: clamp(390px, 64dvh, 580px);
   min-height: 390px;
   margin: 0 auto;
   overflow: hidden;
@@ -100,69 +100,37 @@
   pointer-events: none;
 }
 
-.shared-oasis-scene__rings {
+.shared-oasis-scene__water-confluence {
   position: absolute;
-  inset: 0;
+  top: var(--oasis-center-y);
+  left: var(--oasis-center-x);
+  z-index: 6;
   display: block;
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 8px 8px rgba(91, 54, 28, 0.16));
-  overflow: visible;
-  transform: rotate(-90deg);
-}
-
-.shared-oasis-scene__ring-track,
-.shared-oasis-scene__ring {
-  fill: none;
-  vector-effect: non-scaling-stroke;
-}
-
-.shared-oasis-scene__ring-track--shared {
-  stroke: rgba(91, 82, 61, 0.16);
-  stroke-width: 11;
-}
-
-.shared-oasis-scene__ring-track--perfect {
-  stroke: rgba(105, 77, 43, 0.14);
-  stroke-width: 7;
-}
-
-.shared-oasis-scene__ring {
-  stroke-dasharray: 1;
-  stroke-linecap: round;
+  width: 24%;
+  aspect-ratio: 1.55;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(133, 240, 230, calc(0.14 + var(--waterway-progress) * 0.38)),
+    transparent 72%
+  );
+  filter: blur(6px);
+  opacity: calc(0.24 + var(--waterway-progress) * 0.76);
+  transform: translate(-50%, -50%)
+    scale(calc(0.7 + var(--waterway-progress) * 0.3));
   transition:
-    stroke-dashoffset 520ms cubic-bezier(0.22, 0.82, 0.32, 1),
-    filter 520ms ease,
-    opacity 520ms ease;
-  will-change: stroke-dashoffset;
+    opacity 520ms ease,
+    transform 620ms cubic-bezier(0.22, 0.82, 0.32, 1);
+  pointer-events: none;
 }
 
-.shared-oasis-scene__ring--shared {
-  stroke: #46c6be;
-  stroke-width: 12;
-  stroke-dashoffset: var(--shared-ring-offset);
-  filter: drop-shadow(0 0 3px rgba(172, 255, 245, 0.82))
-    drop-shadow(0 2px 3px rgba(26, 132, 126, 0.28));
-}
-
-.shared-oasis-scene__ring--perfect {
-  stroke: #f1b93c;
-  stroke-width: 8;
-  stroke-dashoffset: var(--perfect-ring-offset);
-  filter: drop-shadow(0 0 3px rgba(255, 220, 126, 0.72));
-  opacity: 0.9;
-}
-
-.shared-oasis-scene[data-oasis-status="IN_PROGRESS"]
-  .shared-oasis-scene__ring--perfect {
-  opacity: 0.36;
-}
-
-.shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
-  .shared-oasis-scene__ring--perfect {
-  filter: drop-shadow(0 0 4px rgba(255, 239, 174, 0.96))
-    drop-shadow(0 0 9px rgba(241, 185, 60, 0.68));
-  opacity: 1;
+.shared-oasis-scene__water-confluence[data-waterway-complete="true"] {
+  background: radial-gradient(
+    ellipse,
+    rgba(171, 255, 244, 0.72),
+    rgba(69, 197, 185, 0.18) 50%,
+    transparent 74%
+  );
 }
 
 .shared-oasis-scene__oasis {
@@ -260,33 +228,74 @@
     inset 0 0 10px rgba(224, 255, 251, 0.5);
 }
 
-.shared-oasis-scene__perfect-crown {
+.shared-oasis-scene__life-aura {
   position: absolute;
-  inset: -2%;
-  z-index: 30;
+  inset: 1%;
+  z-index: 8;
   display: block;
   border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(255, 229, 151, 0.62),
+    rgba(104, 220, 204, 0.2) 48%,
+    transparent 74%
+  );
+  filter: blur(12px);
+  opacity: calc(var(--life-progress) * 0.62);
+  transform: scale(calc(0.88 + var(--life-progress) * 0.12));
+  transition:
+    opacity 620ms ease,
+    transform 720ms cubic-bezier(0.22, 0.82, 0.32, 1);
   pointer-events: none;
 }
 
-.shared-oasis-scene__perfect-crown i {
-  --spark-angle: calc(var(--spark-index) * 60deg);
-
+.shared-oasis-scene__water-sheen {
   position: absolute;
-  top: 50%;
+  top: 53%;
   left: 50%;
+  z-index: 24;
   display: block;
-  width: 5px;
-  height: 5px;
+  width: 44%;
+  height: 27%;
   border-radius: 50%;
-  background: #fff2af;
-  box-shadow:
-    0 0 0 2px rgba(255, 223, 121, 0.16),
-    0 0 10px rgba(255, 225, 126, 0.9);
-  transform: rotate(var(--spark-angle)) translateY(-166px);
-  transform-origin: 0 0;
-  animation: stage-spark 2.8s ease-in-out calc(var(--spark-index) * -0.35s)
-    infinite;
+  background: radial-gradient(
+    ellipse,
+    rgba(232, 255, 251, 0.72),
+    rgba(107, 224, 217, 0.2) 48%,
+    transparent 74%
+  );
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  opacity: calc(var(--life-progress) * 0.46);
+  transform: translate(-50%, -50%)
+    scale(calc(0.82 + var(--life-progress) * 0.18));
+  transition:
+    opacity 620ms ease,
+    transform 720ms cubic-bezier(0.22, 0.82, 0.32, 1);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__oasis-water-target {
+  position: absolute;
+  top: 53%;
+  left: 50%;
+  z-index: 25;
+  width: 1px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
+  .shared-oasis-scene__life-aura {
+  opacity: 0.7;
+  animation: perfect-aura-breathe 4.8s ease-in-out infinite;
+}
+
+.shared-oasis-scene[data-oasis-status="PERFECT_SUCCESS"]
+  .shared-oasis-scene__water-sheen {
+  opacity: 0.58;
+  animation: perfect-water-shimmer 3.6s ease-in-out infinite;
 }
 
 .shared-oasis-scene__members {
@@ -349,14 +358,64 @@
     transform 320ms cubic-bezier(0.22, 0.82, 0.32, 1);
 }
 
+.shared-oasis-scene__member-art::before {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  z-index: 1;
+  width: 5px;
+  height: 31%;
+  border: 1px solid rgba(92, 57, 28, 0.24);
+  border-radius: 3px;
+  background: linear-gradient(90deg, #9a683b 0%, #c28a50 45%, #7a4d29 100%);
+  box-shadow: 1px 2px 3px rgba(70, 43, 23, 0.2);
+  content: "";
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.shared-oasis-scene__member-art::after {
+  position: absolute;
+  top: 31%;
+  left: 50%;
+  z-index: 1;
+  width: 18%;
+  height: 6%;
+  border-radius: 50%;
+  background: rgba(78, 47, 24, 0.16);
+  content: "";
+  filter: blur(0.5px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .shared-oasis-scene__member-island {
   position: absolute;
   inset: 0;
   display: block;
+  z-index: 2;
   width: 100%;
   height: 100%;
   object-fit: contain;
   filter: saturate(0.96) drop-shadow(0 3px 3px rgba(64, 40, 22, 0.18));
+}
+
+.shared-oasis-scene__member-water-origin {
+  position: absolute;
+  top: 48%;
+  z-index: 3;
+  display: block;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.shared-oasis-scene__member-water-origin[data-water-origin-side="right"] {
+  left: 74%;
+}
+
+.shared-oasis-scene__member-water-origin[data-water-origin-side="left"] {
+  left: 26%;
 }
 
 .shared-oasis-scene__member[data-member-status="pending"]
@@ -390,11 +449,11 @@
 
 .shared-oasis-scene__member-avatar {
   position: absolute;
-  top: -2%;
+  top: -40%;
   left: 50%;
   z-index: 3;
   display: block;
-  width: 46%;
+  width: 56%;
   aspect-ratio: 1;
   overflow: hidden;
   border: 2px solid color-mix(in srgb, var(--member-accent) 68%, white);
@@ -424,8 +483,8 @@
 
 .shared-oasis-scene__member-complete {
   position: absolute;
-  top: 3%;
-  right: 11%;
+  top: -42%;
+  right: 6%;
   z-index: 4;
   display: grid;
   width: 17px;
@@ -515,29 +574,60 @@
 
 .shared-oasis-scene__water-drop {
   position: absolute;
-  top: -7px;
-  left: -7px;
+  top: -9px;
+  left: -9px;
   display: block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(226, 255, 252, 0.9);
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(239, 255, 253, 0.98);
   border-radius: 72% 28% 66% 34%;
-  background: linear-gradient(145deg, #b7f6ee 8%, #38c6bc 68%);
+  background: linear-gradient(145deg, #ddfff9 5%, #39d6ca 62%, #159a94 100%);
   box-shadow:
-    0 0 0 3px rgba(65, 205, 195, 0.12),
-    0 0 12px rgba(76, 219, 207, 0.76);
+    0 0 0 4px rgba(65, 205, 195, 0.18),
+    0 0 16px rgba(49, 236, 221, 0.92),
+    0 2px 5px rgba(20, 107, 102, 0.38);
 }
 
-@keyframes stage-spark {
+.shared-oasis-scene__water-drop-trail {
+  position: absolute;
+  top: 3px;
+  left: -2px;
+  display: block;
+  width: 4px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(202, 255, 248, 0.76),
+    rgba(57, 210, 200, 0.22),
+    transparent
+  );
+  filter: blur(1px);
+  opacity: 0.76;
+  transform: translateX(-50%);
+}
+
+@keyframes perfect-aura-breathe {
   0%,
   100% {
-    opacity: 0.32;
-    scale: 0.72;
+    filter: blur(12px) brightness(0.96);
+    scale: 0.98;
   }
 
   50% {
-    opacity: 1;
-    scale: 1.12;
+    filter: blur(14px) brightness(1.1);
+    scale: 1.03;
+  }
+}
+
+@keyframes perfect-water-shimmer {
+  0%,
+  100% {
+    opacity: 0.46;
+  }
+
+  50% {
+    opacity: 0.68;
   }
 }
 
