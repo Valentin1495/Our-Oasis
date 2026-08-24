@@ -234,6 +234,18 @@ describe("멤버 도크", () => {
     },
   );
 
+  it("친구가 2명일 때는 도크 양 끝이 아니라 중앙 쪽에 모아 배치한다", () => {
+    const [first, second] = [0, 1].map((index) =>
+      getMemberDockPosition(index, 2),
+    );
+
+    expect(first.xPercent).toBeGreaterThan(SHARED_OASIS_LAYOUT.dockMinXPercent);
+    expect(second.xPercent).toBeLessThan(SHARED_OASIS_LAYOUT.dockMaxXPercent);
+    expect(
+      SHARED_OASIS_LAYOUT.centerXPercent - first.xPercent,
+    ).toBeCloseTo(second.xPercent - SHARED_OASIS_LAYOUT.centerXPercent, 5);
+  });
+
   it("멤버별 0~4개 물방울 슬롯과 참여 상태를 렌더링한다", () => {
     const members = Array.from({ length: 5 }, (_, index) => ({
       ...MEMBERS[index % MEMBERS.length],
@@ -268,6 +280,14 @@ describe("멤버 도크", () => {
     expect(markup).toContain('data-member-status="participated"');
   });
 
+  it("메인 오아시스와 각 멤버 섬을 같은 스티커 스타일로 표시한다", () => {
+    const markup = renderScene({ percent: 50 });
+
+    expect(markup.match(/data-visual-style="sticker"/g)).toHaveLength(
+      MEMBERS.length + 1,
+    );
+  });
+
   it("현재 사용자를 표시하고 기여량과 행동을 접근성 이름에 포함한다", () => {
     const markup = renderScene({
       percent: 50,
@@ -297,6 +317,17 @@ describe("멤버 도크", () => {
         isInteractionDisabled: true,
       }),
     ).toMatch(/<button[^>]*disabled=""/);
+  });
+
+  it("기록 처리 중에는 물 한 잔 버튼과 동일하게 처리 중 상태를 안내한다", () => {
+    const markup = renderScene({
+      percent: 50,
+      currentMemberId: "me",
+      isInteractionDisabled: true,
+    });
+
+    expect(markup).toContain("지우의 섬, 물 기록 처리 중");
+    expect(markup).not.toContain("물 한 잔 채우기");
   });
 });
 

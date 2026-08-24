@@ -265,8 +265,11 @@ export function SharedOasisScene({
             aria-hidden="true"
           />
 
-          <div className="shared-oasis-scene__oasis" aria-hidden="true">
-            <span className="shared-oasis-scene__oasis-shadow" />
+          <div
+            className="shared-oasis-scene__oasis"
+            data-visual-style="sticker"
+            aria-hidden="true"
+          >
             {OASIS_LAYERS.map((layer) => {
               const isActive = layer.status === status;
 
@@ -377,12 +380,12 @@ export function SharedOasisScene({
               initial={{
                 left: waterDropArc.left[0],
                 top: waterDropArc.top[0],
-                opacity: 0.7,
+                opacity: 0.94,
               }}
               animate={{
                 left: waterDropArc.left,
                 top: waterDropArc.top,
-                opacity: [0.7, 1, 1, 0.25],
+                opacity: [0.94, 1, 1, 0.72],
               }}
               transition={{
                 left: {
@@ -410,8 +413,8 @@ export function SharedOasisScene({
               />
               <motion.span
                 className="shared-oasis-scene__water-drop"
-                initial={{ rotate: 45, scale: 0.72 }}
-                animate={{ rotate: 45, scale: [0.72, 1.08, 0.8] }}
+                initial={{ rotate: 135, scale: 0.86 }}
+                animate={{ rotate: 135, scale: [0.86, 1.12, 0.92] }}
                 transition={{
                   duration: WATER_TRAVEL_DURATION_SECONDS,
                   ease: "easeInOut",

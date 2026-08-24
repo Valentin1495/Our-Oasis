@@ -6,6 +6,7 @@ import styles from "./WaterLogButton.module.css";
 interface Props {
   hydration: DailyHydration | null;
   isVisualFeedbackPlaying?: boolean;
+  hasPendingUndo?: boolean;
 }
 
 const DROP_ORDINALS = ["첫", "두", "세", "네"] as const;
@@ -17,6 +18,7 @@ function formatMl(value: number): string {
 export function WaterLogButton({
   hydration,
   isVisualFeedbackPlaying = false,
+  hasPendingUndo = false,
 }: Props) {
   const { logWaterCup, isLoggingWater, waterLogFeedback, waterLogFeedbackId } =
     useOasisStore();
@@ -34,7 +36,9 @@ export function WaterLogButton({
   const consumedMl = hydration?.consumedMl ?? 0;
   const goalMl = hydration?.goalMl ?? 0;
   const goalComplete = goalMl > 0 && consumedMl >= goalMl;
-  const isButtonDisabled = isLoggingWater || isVisualFeedbackPlaying;
+  const isProcessing = isLoggingWater || isVisualFeedbackPlaying;
+  const isPendingUndoActive = hasPendingUndo && !isProcessing;
+  const isButtonDisabled = isProcessing || isPendingUndoActive;
 
   const feedbackMessage = waterLogFeedback
     ? waterLogFeedback.kind === "contribution"
@@ -102,11 +106,13 @@ export function WaterLogButton({
         onClick={logWaterCup}
         disabled={isButtonDisabled}
         aria-label={
-          isButtonDisabled
+          isProcessing
             ? "물 기록 처리 중"
-            : isContributionComplete
-              ? "물 섭취를 개인 기록에 추가하기, 오늘 공동 기여 4개 완료"
-              : `공유 오아시스에 물 한 잔 채우기, 오늘 공동 기여 ${drops}/4`
+            : isPendingUndoActive
+              ? "실행 취소 대기 중, 잠시 후 다시 기록할 수 있어요"
+              : isContributionComplete
+                ? "물 섭취를 개인 기록에 추가하기, 오늘 공동 기여 4개 완료"
+                : `공유 오아시스에 물 한 잔 채우기, 오늘 공동 기여 ${drops}/4`
         }
       >
         <span className={styles.springRim} aria-hidden="true">
@@ -118,11 +124,13 @@ export function WaterLogButton({
           </span>
         </span>
         <span className={styles.buttonLabel}>
-          {isButtonDisabled
+          {isProcessing
             ? "기록 중..."
-            : isContributionComplete
-              ? "물 한 잔 기록하기"
-              : "물 한 잔 채우기"}
+            : isPendingUndoActive
+              ? "잠시만요..."
+              : isContributionComplete
+                ? "물 한 잔 기록하기"
+                : "물 한 잔 채우기"}
         </span>
       </button>
     </div>

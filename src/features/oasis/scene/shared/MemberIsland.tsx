@@ -46,7 +46,11 @@ export function MemberIsland({
 
   const content: ReactNode = (
     <>
-      <span className="shared-oasis-scene__member-art" aria-hidden="true">
+      <span
+        className="shared-oasis-scene__member-art"
+        data-visual-style="sticker"
+        aria-hidden="true"
+      >
         {isSourceActive && (
           <motion.span
             className="shared-oasis-scene__member-source-ripple"
@@ -125,7 +129,11 @@ export function MemberIsland({
           type="button"
           className="shared-oasis-scene__member-card shared-oasis-scene__member-button"
           disabled={interactionDisabled}
-          aria-label={`${name}의 섬, 오늘 물방울 ${normalizedDrops}개 기여. 물 한 잔 채우기`}
+          aria-label={
+            interactionDisabled
+              ? `${name}의 섬, 물 기록 처리 중`
+              : `${name}의 섬, 오늘 물방울 ${normalizedDrops}개 기여. 물 한 잔 채우기`
+          }
           onClick={() => {
             if (interactionDisabled || !onGiveWater) return;
             void onGiveWater();

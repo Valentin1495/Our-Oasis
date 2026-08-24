@@ -12,7 +12,6 @@ export {
   normalizeProgressPercentage,
   type OasisStatus,
 } from "./scene/oasisState";
-export { SharedProgressBar } from "./components/SharedProgressBar";
 export {
   deriveOasisProgressMessage,
   deriveParticipantSummary,

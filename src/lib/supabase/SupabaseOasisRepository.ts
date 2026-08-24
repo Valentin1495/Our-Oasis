@@ -12,10 +12,7 @@ import type {
 } from "../../types";
 import { supabase } from "./client";
 import type { DayRecordRow, RoomMemberRow, RoomRow } from "./types";
-import {
-  getCompletionState,
-  getOasisStage,
-} from "../../features/oasis/oasisRules";
+import { getOasisStage } from "../../features/oasis/oasisRules";
 
 function toLocalDate(date: Date): string {
   const year = date.getFullYear();
@@ -119,80 +116,20 @@ export class SupabaseOasisRepository implements OasisRepository {
     await this.refreshCurrentDaySnapshot(roomId, dayIndex);
   }
 
+  /**
+   * 멤버 합류로 오늘의 스냅샷(멤버 수/최대 물방울 등)을 다시 계산한다.
+   * 읽기→계산→쓰기를 클라이언트에서 나눠 하면 동시 합류 시 경쟁 상태로
+   * 값이 유실될 수 있어, day_records 행을 잠그는 원자적 RPC에 위임한다.
+   */
   private async refreshCurrentDaySnapshot(
     roomId: string,
     dayIndex: number,
   ): Promise<void> {
-    const [
-      { data: memberRows, error: memberError },
-      { data: dayRow, error: dayError },
-    ] = await Promise.all([
-      supabase
-        .from("room_members")
-        .select(
-          "id, eligible_from_day_index, contributed_drops_today",
-        )
-        .eq("room_id", roomId),
-      supabase
-        .from("day_records")
-        .select("id, date")
-        .eq("room_id", roomId)
-        .eq("day_index", dayIndex)
-        .single(),
-    ]);
-    if (memberError) throw new Error(memberError.message);
-    if (dayError || !dayRow) {
-      throw new Error(dayError?.message ?? "오늘의 기록을 찾을 수 없어요.");
-    }
-
-    const eligibleMembers = (memberRows ?? []).filter(
-      (member) =>
-        (member.eligible_from_day_index as number) <= dayIndex,
-    );
-    const eligibleIds = new Set(
-      eligibleMembers.map((member) => member.id as string),
-    );
-    const totalDrops = eligibleMembers.reduce(
-      (sum, member) =>
-        sum + (member.contributed_drops_today as number),
-      0,
-    );
-    const maxDrops = eligibleMembers.length * 4;
-    const completion = getCompletionState(totalDrops, maxDrops);
-
-    const { data: logRows, error: logError } = await supabase
-      .from("water_logs")
-      .select("member_id")
-      .eq("room_id", roomId)
-      .eq("local_date", dayRow.date)
-      .not("confirmed_at", "is", null);
-    if (logError) throw new Error(logError.message);
-
-    const participatingMemberIds = new Set(
-      (logRows ?? [])
-        .map((log) => log.member_id as string)
-        .filter((id) => eligibleIds.has(id)),
-    );
-    const participatingMemberCount = participatingMemberIds.size;
-
-    const { error: updateError } = await supabase
-      .from("day_records")
-      .update({
-        total_drops: totalDrops,
-        member_count_snapshot: eligibleMembers.length,
-        max_drops_snapshot: maxDrops,
-        shared_progress_percent: Math.round(
-          completion.completionPercent,
-        ),
-        participating_member_count: participatingMemberCount,
-        is_complete: completion.isComplete,
-        is_full_complete: completion.isFullComplete,
-        all_participated:
-          eligibleMembers.length > 0 &&
-          participatingMemberCount === eligibleMembers.length,
-      })
-      .eq("id", dayRow.id);
-    if (updateError) throw new Error(updateError.message);
+    const { error } = await supabase.rpc("refresh_room_day_snapshot", {
+      p_room_id: roomId,
+      p_day_index: dayIndex,
+    });
+    if (error) throw new Error(error.message);
   }
 
   async createRoom(input: CreateRoomInput): Promise<RoomJoinResult> {

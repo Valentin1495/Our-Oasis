@@ -28,6 +28,9 @@ export const SHARED_OASIS_LAYOUT = {
   dockYPercent: 84,
   dockMinXPercent: 12,
   dockMaxXPercent: 88,
+  // 2명일 때는 도크 양 끝(12%/88%)에 배치하면 서로 동떨어져 보이므로,
+  // 3명일 때의 중앙-바깥 간격과 같은 폭으로 중앙 쪽에 모아 배치한다.
+  dockPairHalfSpreadPercent: 19,
   oasisZIndex: 20,
   memberZIndex: 40,
 } as const;
@@ -63,10 +66,14 @@ export function getMemberDockPosition(
   const xPercent =
     count === 1
       ? 50
-      : SHARED_OASIS_LAYOUT.dockMinXPercent +
-        (index / (count - 1)) *
-          (SHARED_OASIS_LAYOUT.dockMaxXPercent -
-            SHARED_OASIS_LAYOUT.dockMinXPercent);
+      : count === 2
+        ? SHARED_OASIS_LAYOUT.centerXPercent +
+          (index === 0 ? -1 : 1) *
+            SHARED_OASIS_LAYOUT.dockPairHalfSpreadPercent
+        : SHARED_OASIS_LAYOUT.dockMinXPercent +
+          (index / (count - 1)) *
+            (SHARED_OASIS_LAYOUT.dockMaxXPercent -
+              SHARED_OASIS_LAYOUT.dockMinXPercent);
 
   return {
     xPercent: round(xPercent),

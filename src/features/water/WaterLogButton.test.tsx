@@ -51,4 +51,23 @@ describe("WaterLogButton", () => {
     expect(markup).toContain('aria-label="물 기록 처리 중"');
     expect(markup).toContain("기록 중...");
   });
+
+  it("실행 취소 배너가 떠 있는 동안에는 연속 기록을 막는다", () => {
+    const markup = renderToStaticMarkup(
+      <WaterLogButton
+        hydration={{
+          consumedMl: 500,
+          goalMl: 2000,
+          contributionDrops: 2,
+        }}
+        hasPendingUndo
+      />,
+    );
+
+    expect(markup).toContain('disabled=""');
+    expect(markup).toContain(
+      'aria-label="실행 취소 대기 중, 잠시 후 다시 기록할 수 있어요"',
+    );
+    expect(markup).toContain("잠시만요...");
+  });
 });

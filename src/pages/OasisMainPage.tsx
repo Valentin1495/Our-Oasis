@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Toast } from "@toss/tds-mobile";
 import {
   EmptyState,
   InlineError,
@@ -32,6 +33,14 @@ import styles from "./OasisMainPage.module.css";
 
 type InviteStatus = "idle" | "copying" | "copied" | "error";
 
+const oasisPageStyle: CSSProperties = {
+  height: "100dvh",
+  minHeight: 0,
+  overflowY: "auto",
+  overscrollBehaviorY: "contain",
+  backgroundColor: "#c78e57",
+};
+
 export function OasisMainPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
@@ -41,6 +50,7 @@ export function OasisMainPage() {
     oasisError,
     memberId,
     isLoggingWater,
+    pendingUndo,
     loadOasisState,
     logWaterCup,
     subscribeToRoom,
@@ -61,9 +71,6 @@ export function OasisMainPage() {
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>("idle");
 
   const bottomCTARef = useRef<HTMLDivElement>(null);
-  const inviteResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
 
   useLayoutEffect(() => {
     const bottomCTA = bottomCTARef.current;
@@ -98,15 +105,6 @@ export function OasisMainPage() {
     mediaQuery.addEventListener("change", updatePreference);
     return () => mediaQuery.removeEventListener("change", updatePreference);
   }, []);
-
-  useEffect(
-    () => () => {
-      if (inviteResetTimerRef.current) {
-        clearTimeout(inviteResetTimerRef.current);
-      }
-    },
-    [],
-  );
 
   const isScenePreview = import.meta.env.DEV && scenePreviewPercent !== null;
   const targetSceneSnapshot = useMemo(() => {
@@ -152,11 +150,19 @@ export function OasisMainPage() {
 
   if (!roomId) return null;
 
-  if (isLoadingOasis && !oasisState) return <LoadingView rows={5} />;
+  // 로딩/에러 상태도 오아시스 화면과 같은 배경을 사용해, 로딩이 끝나고
+  // 장면이 나타날 때 흰 화면 → 모래빛 배경으로 바뀌는 깜빡임을 없앤다.
+  if (isLoadingOasis && !oasisState) {
+    return (
+      <ScreenContainer className={styles.page} style={oasisPageStyle}>
+        <LoadingView rows={5} />
+      </ScreenContainer>
+    );
+  }
 
   if (oasisError && !oasisState) {
     return (
-      <ScreenContainer>
+      <ScreenContainer className={styles.page} style={oasisPageStyle}>
         <InlineError
           message={oasisError}
           onRetry={() => loadOasisState(roomId)}
@@ -167,7 +173,7 @@ export function OasisMainPage() {
 
   if (!oasisState) {
     return (
-      <ScreenContainer>
+      <ScreenContainer className={styles.page} style={oasisPageStyle}>
         <EmptyState
           title="오아시스를 불러올 수 없어요"
           description="잠시 후 다시 시도해 주세요."
@@ -365,14 +371,6 @@ export function OasisMainPage() {
     setInviteStatus("copying");
     const didCopy = await copyInviteLink(roomId);
     setInviteStatus(didCopy ? "copied" : "error");
-
-    if (inviteResetTimerRef.current) {
-      clearTimeout(inviteResetTimerRef.current);
-    }
-    inviteResetTimerRef.current = setTimeout(
-      () => setInviteStatus("idle"),
-      2500,
-    );
   };
 
   const handleViewHistory = () => {
@@ -400,11 +398,7 @@ export function OasisMainPage() {
       } ${scenePreviewReducedMotion ? styles.reducedMotion : ""}`}
       style={
         {
-          height: "100dvh",
-          minHeight: 0,
-          overflowY: "auto",
-          overscrollBehaviorY: "contain",
-          backgroundColor: "#c78e57",
+          ...oasisPageStyle,
           "--stage-action-height": `${bottomCTAHeight}px`,
         } as CSSProperties
       }
@@ -471,7 +465,9 @@ export function OasisMainPage() {
           announcement={sceneController.announcement}
           reducedMotion={effectiveReducedMotion}
           isAnimating={sceneController.isAnimating}
-          isInteractionDisabled={isScenePreview || isLoggingWater}
+          isInteractionDisabled={
+            isScenePreview || isLoggingWater || pendingUndo !== null
+          }
           onGiveWater={isScenePreview ? undefined : logWaterCup}
           onTravelComplete={sceneController.completeTravel}
           onImpactComplete={sceneController.completeImpact}
@@ -500,6 +496,7 @@ export function OasisMainPage() {
         <WaterLogButton
           hydration={oasisState.myHydration}
           isVisualFeedbackPlaying={sceneController.isAnimating}
+          hasPendingUndo={pendingUndo !== null}
         />
 
         <div className={styles.secondaryActionSlot}>
@@ -523,20 +520,21 @@ export function OasisMainPage() {
             />
           )}
         </div>
-
-        <p
-          className={styles.inviteFeedback}
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {inviteStatus === "copied"
-            ? "초대 링크를 복사했어요"
-            : inviteStatus === "error"
-              ? "링크를 복사하지 못했어요"
-              : ""}
-        </p>
       </nav>
+
+      <Toast
+        position="bottom"
+        open={inviteStatus === "copied" || inviteStatus === "error"}
+        text={
+          inviteStatus === "error"
+            ? "링크를 복사하지 못했어요"
+            : "초대 링크를 복사했어요"
+        }
+        duration={2500}
+        onClose={() => setInviteStatus("idle")}
+        aria-live="polite"
+        style={{ bottom: `${bottomCTAHeight + 8}px` }}
+      />
 
       <UndoBanner bottomOffset={bottomCTAHeight} />
 

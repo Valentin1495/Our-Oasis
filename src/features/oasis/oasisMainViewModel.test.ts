@@ -57,7 +57,7 @@ describe("deriveOasisProgressMessage", () => {
         maxDrops: 20,
       }),
     ).toEqual({
-      headline: "모두 함께 완벽히 채웠어요",
+      headline: "우리들의 오아시스, 완벽하게 채웠어요",
       detail: null,
       remainingDrops: 0,
     });

@@ -113,6 +113,19 @@ describe("diffOasisSceneSnapshots", () => {
     });
   });
 
+  it("멤버가 이미 4개를 채운 뒤 개인 기록만 추가되면 이벤트를 만들지 않는다", () => {
+    const maxedMembers = MEMBERS.map((member) =>
+      member.id === "me"
+        ? { ...member, contributedDropsToday: 4, hasWaterRecordToday: true }
+        : member,
+    );
+    const current = snapshot(5, maxedMembers);
+
+    // 개인 물 섭취만 늘어나고 공동 기여(멤버별 최대 4개)는 그대로인 상황을
+    // 흉내낸다. members/총합이 그대로면 snapshot 키가 같아 이벤트가 없다.
+    expect(diffOasisSceneSnapshots(current, current)).toBeNull();
+  });
+
   it("75%와 100% 통과를 순서대로 기록한다", () => {
     const before = createOasisSceneSnapshot({
       totalDrops: 2,
