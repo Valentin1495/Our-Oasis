@@ -22,6 +22,10 @@ import {
 } from "./oasisState";
 import { MemberIsland } from "./shared/MemberIsland";
 import {
+  getMemberIslandStatus,
+  normalizeMemberDrops,
+} from "./shared/memberIslandPresentation";
+import {
   deriveOrganicProgress,
   getMemberDockPosition,
   getMeasuredWaterDropArc,
@@ -29,6 +33,8 @@ import {
   type WaterDropArc,
 } from "./sharedOasisSceneLayout";
 import "./SharedOasisScene.css";
+
+const WAKE_UP_HINT_VISIBLE_DURATION_MS = 4200;
 
 export interface Member {
   id: string;
@@ -50,7 +56,8 @@ export interface SharedOasisSceneProps {
   impactIndex?: number;
   isAnimating?: boolean;
   isInteractionDisabled?: boolean;
-  onGiveWater?: () => void | Promise<void>;
+  onWakeUpMember?: (memberId: string) => void;
+  showWakeUpHint?: boolean;
   onTravelComplete?: () => void;
   onImpactComplete?: () => void;
 }
@@ -86,7 +93,8 @@ export function SharedOasisScene({
   impactIndex = 0,
   isAnimating = false,
   isInteractionDisabled = false,
-  onGiveWater,
+  onWakeUpMember,
+  showWakeUpHint = false,
   onTravelComplete,
   onImpactComplete,
 }: SharedOasisSceneProps) {
@@ -101,6 +109,34 @@ export function SharedOasisScene({
   const oasisWaterTargetRef = useRef<HTMLSpanElement>(null);
   const memberWaterOriginRefs = useRef(new Map<string, HTMLSpanElement>());
   const [waterDropArc, setWaterDropArc] = useState<WaterDropArc | null>(null);
+  const wakeUpHintMemberId =
+    members
+      .slice(0, 5)
+      .find(
+        (member) =>
+          member.id !== currentMemberId &&
+          getMemberIslandStatus({
+            drops: normalizeMemberDrops(member.drops),
+            hasWaterRecordToday: member.hasWaterRecordToday,
+          }) !== "complete",
+      )?.id ?? null;
+  const [wakeUpHintVisible, setWakeUpHintVisible] = useState(
+    () => showWakeUpHint && wakeUpHintMemberId !== null,
+  );
+
+  useEffect(() => {
+    if (!showWakeUpHint || !wakeUpHintMemberId) {
+      setWakeUpHintVisible(false);
+      return;
+    }
+    setWakeUpHintVisible(true);
+    const timer = window.setTimeout(
+      () => setWakeUpHintVisible(false),
+      WAKE_UP_HINT_VISIBLE_DURATION_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [showWakeUpHint, wakeUpHintMemberId]);
+
   const registerMemberWaterOrigin = useCallback(
     (memberId: string, node: HTMLSpanElement | null) => {
       if (node) {
@@ -112,7 +148,7 @@ export function SharedOasisScene({
     [],
   );
   const interactionDisabled =
-    isInteractionDisabled || isAnimating || !onGiveWater;
+    isInteractionDisabled || isAnimating || !onWakeUpMember;
 
   useIsomorphicLayoutEffect(() => {
     if (
@@ -354,15 +390,19 @@ export function SharedOasisScene({
               position={getMemberDockPosition(index, members.length)}
               isCurrentMember={member.id === currentMemberId}
               isSourceActive={
-                event?.kind === "contribution" &&
+                (event?.kind === "contribution" ||
+                  event?.kind === "participation-only") &&
                 (phase === "source" || phase === "travel") &&
                 dropActorMemberId === member.id
               }
               interactionDisabled={interactionDisabled}
+              showWakeUpHint={
+                wakeUpHintVisible && member.id === wakeUpHintMemberId
+              }
               waterOriginRef={(node) =>
                 registerMemberWaterOrigin(member.id, node)
               }
-              onGiveWater={onGiveWater}
+              onWakeUp={onWakeUpMember}
             />
           ))}
         </ul>

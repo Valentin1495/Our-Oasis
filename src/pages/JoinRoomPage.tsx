@@ -11,7 +11,8 @@ export function JoinRoomPage() {
   const [searchParams] = useSearchParams();
   const initialRoomId = searchParams.get('roomId') ?? '';
 
-  const { profile, repository, setCurrentRoom, setProfile } = useOasisStore();
+  const { profile, repository, setCurrentRoom, setProfile, rememberJoinedRoom } =
+    useOasisStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +41,15 @@ export function JoinRoomPage() {
         tossAnonymousKey,
       );
       setCurrentRoom(room);
-      // mock이 발급한 실제 memberId로 store 동기화
+      // 서버가 발급한 실제 memberId로 store 동기화
       setProfile(profile, memberId);
+      rememberJoinedRoom({
+        room,
+        memberId,
+        nickname: profile.nickname,
+        cupMl: profile.cupMl,
+        dailyGoalMl: profile.dailyGoalMl,
+      });
       navigate(`/oasis/${room.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : '방 참여에 실패했어요.');

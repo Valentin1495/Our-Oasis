@@ -2,19 +2,29 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@toss/tds-mobile";
 import { ScreenContainer, LoadingView } from "../components";
+import { mergeRoomSummaries } from "../features/room";
 import { useOasisStore } from "../lib/store/useOasisStore";
 import { getAnonymousUserKey } from "../lib/toss/getAnonymousUserKey";
 import type { MyRoomSummary } from "../types";
 
 export function IntroPage() {
   const navigate = useNavigate();
-  const { repository, setCurrentRoom, setProfile } = useOasisStore();
+  const {
+    repository,
+    setCurrentRoom,
+    setProfile,
+    rememberJoinedRoom,
+    joinedRooms,
+  } = useOasisStore();
   const [isSeeding, setIsSeeding] = useState(false);
-  const [myRooms, setMyRooms] = useState<MyRoomSummary[] | null>(null);
-  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  // 이 기기에 남아 있는 참여 기록을 먼저 보여주고, 서버 조회가 끝나면
+  // 최신 정보로 병합한다. 익명 식별키 조회가 실패하거나(브라우저 미리보기,
+  // 구버전 SDK 등) 네트워크가 느려도 목록 자체는 항상 보일 수 있게 한다.
+  const [myRooms, setMyRooms] = useState<MyRoomSummary[]>(joinedRooms);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(
+    joinedRooms.length === 0,
+  );
 
-  // 사용자 식별키를 기준으로 이미 참여 중인 방이 있으면 목록으로 보여준다.
-  // (한 사용자가 여러 방에 동시에 참여할 수 있으므로 방 하나로 단정하지 않는다.)
   useEffect(() => {
     let active = true;
     (async () => {
@@ -24,10 +34,10 @@ export function IntroPage() {
         return;
       }
       try {
-        const rooms = await repository.getMyRooms(tossAnonymousKey);
-        if (active) setMyRooms(rooms);
+        const serverRooms = await repository.getMyRooms(tossAnonymousKey);
+        if (active) setMyRooms(mergeRoomSummaries(serverRooms, joinedRooms));
       } catch {
-        if (active) setMyRooms(null);
+        // 서버 조회가 실패해도 로컬 기록은 그대로 남겨 목록이 비지 않게 한다.
       } finally {
         if (active) setIsLoadingRooms(false);
       }
@@ -35,6 +45,9 @@ export function IntroPage() {
     return () => {
       active = false;
     };
+    // joinedRooms는 최초 렌더 기준 값으로 충분하다 — 이후 변경은 이 화면에서
+    // 다시 조회할 필요 없는 로컬 상태 변화(예: 다른 방 입장)이다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repository]);
 
   function handleCreateRoom() {
@@ -56,6 +69,7 @@ export function IntroPage() {
       },
       room.memberId,
     );
+    rememberJoinedRoom(room);
     navigate(`/oasis/${room.room.id}`);
   }
 
@@ -78,6 +92,13 @@ export function IntroPage() {
       });
       setCurrentRoom(room);
       setProfile({ ...demoProfile, id: memberId }, memberId);
+      rememberJoinedRoom({
+        room,
+        memberId,
+        nickname: demoProfile.nickname,
+        cupMl: demoProfile.cupMl,
+        dailyGoalMl: demoProfile.dailyGoalMl,
+      });
       // 데모 느낌을 주기 위해 물 두 컵을 먼저 기록해 둔다.
       await repository.logWaterCup(room.id, memberId);
       await repository.logWaterCup(room.id, memberId);
@@ -89,7 +110,7 @@ export function IntroPage() {
     }
   }
 
-  const hasMyRooms = !!myRooms && myRooms.length > 0;
+  const hasMyRooms = myRooms.length > 0;
 
   return (
     <ScreenContainer>

@@ -118,7 +118,7 @@ export function DayResultModal({
                 ? "💧 모두의 물방울 배지를 얻었어요!"
                 : isFinalOasisUnlocked
                   ? "🎉 최종 오아시스를 얻었어요!"
-              : "💧 모든 팀원이 오늘 함께 채웠어요!"}
+              : "💧 모든 팀원이 함께 채웠어요!"}
           </p>
         )}
 

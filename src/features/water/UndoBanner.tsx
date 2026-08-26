@@ -6,12 +6,12 @@ interface Props {
 }
 
 export function UndoBanner({ bottomOffset }: Props) {
-  const { pendingUndo, undoWaterCup } = useOasisStore();
+  const { undoWindow, undoWaterCup } = useOasisStore();
 
   return (
     <Toast
       position="bottom"
-      open={pendingUndo !== null}
+      open={undoWindow !== null}
       text="물 한 컵을 기록했어요"
       button={
         <Toast.Button onClick={undoWaterCup} aria-label="물 기록 실행 취소">

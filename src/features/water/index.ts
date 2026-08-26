@@ -1,5 +1,5 @@
 export {
-  computeContributionDrops,
+  computeContributionDropsFromCups,
   computeContributionDropsFromMl,
   computeCupsPerDrop,
   computePersonalProgressPercent,
@@ -8,3 +8,4 @@ export {
 } from './computeContributionDrops';
 export { UndoBanner } from './UndoBanner';
 export { WaterLogButton } from './WaterLogButton';
+export { isWaterActionLocked } from './waterLock';

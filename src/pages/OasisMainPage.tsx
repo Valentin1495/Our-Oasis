@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Toast } from "@toss/tds-mobile";
+import { Toast, ConfirmDialog } from "@toss/tds-mobile";
 import {
   EmptyState,
   InlineError,
@@ -26,12 +26,19 @@ import {
   useOasisSceneController,
   type OasisSceneMember,
 } from "../features/oasis";
-import { canInviteMoreMembers, copyInviteLink } from "../features/room";
+import {
+  canInviteMoreMembers,
+  copyInviteLink,
+  wakeUpFriends,
+} from "../features/room";
 import { UndoBanner, WaterLogButton } from "../features/water";
 import { useOasisStore } from "../lib/store/useOasisStore";
 import styles from "./OasisMainPage.module.css";
 
 type InviteStatus = "idle" | "copying" | "copied" | "error";
+type WakeUpStatus = "idle" | "sending" | "shared" | "copied" | "failed";
+
+const WAKE_UP_HINT_STORAGE_KEY = "oasis:wake-up-hint-learned";
 
 const oasisPageStyle: CSSProperties = {
   height: "100dvh",
@@ -50,11 +57,12 @@ export function OasisMainPage() {
     oasisError,
     memberId,
     isLoggingWater,
-    pendingUndo,
+    undoWindow,
     loadOasisState,
-    logWaterCup,
+    leaveRoom,
     subscribeToRoom,
     unsubscribeFromRoom,
+    forgetJoinedRoom,
   } = useOasisStore();
 
   const [showDayResult, setShowDayResult] = useState(false);
@@ -69,8 +77,31 @@ export function OasisMainPage() {
   >(null);
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>("idle");
+  const [wakeUpStatus, setWakeUpStatus] = useState<WakeUpStatus>("idle");
+  const [celebrateMemberName, setCelebrateMemberName] = useState<
+    string | null
+  >(null);
+  const [wakeUpHintLearned, setWakeUpHintLearned] = useState(() => {
+    try {
+      return localStorage.getItem(WAKE_UP_HINT_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const bottomCTARef = useRef<HTMLDivElement>(null);
+  const wakeUpResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(
+    () => () => {
+      if (wakeUpResetTimerRef.current) clearTimeout(wakeUpResetTimerRef.current);
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     const bottomCTA = bottomCTARef.current;
@@ -91,6 +122,15 @@ export function OasisMainPage() {
     if (!roomId) return;
     void loadOasisState(roomId);
   }, [roomId, loadOasisState]);
+
+  useEffect(() => {
+    // 방이 실제로 존재하지 않는다고 서버가 확인해 준 경우에만 이 기기의
+    // 참여 목록에서 지운다. 그 외 실패(네트워크 오류 등)는 일시적일 수
+    // 있으므로 목록을 건드리지 않는다.
+    if (roomId && oasisError === "방을 찾을 수 없어요.") {
+      forgetJoinedRoom(roomId);
+    }
+  }, [roomId, oasisError, forgetJoinedRoom]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -373,9 +413,61 @@ export function OasisMainPage() {
     setInviteStatus(didCopy ? "copied" : "error");
   };
 
+  // 공동 기여는 멤버당 하루 최대 4개. 오늘 총 물방울(75%/100% 판정 기준)에
+  // 직접 영향을 주는 건 "한 번도 안 마심"이 아니라 "아직 4개를 다 채우지
+  // 않음"이므로, 이미 일부 기여한 멤버도 깨우기 대상에 포함한다.
+  const hasWakeUpTarget = members.some(
+    (member) => member.id !== memberId && member.contributedDropsToday < 4,
+  );
+
+  const markWakeUpHintLearned = () => {
+    if (wakeUpHintLearned) return;
+    setWakeUpHintLearned(true);
+    try {
+      localStorage.setItem(WAKE_UP_HINT_STORAGE_KEY, "1");
+    } catch {
+      // 프라이빗 모드 등 저장이 불가능해도 힌트 노출 자체는 계속 동작해야 한다.
+    }
+  };
+
+  const handleWakeUpMember = (targetMemberId: string) => {
+    markWakeUpHintLearned();
+    if (wakeUpStatus === "sending" || targetMemberId === memberId) return;
+    const target = members.find((member) => member.id === targetMemberId);
+    if (!target) return;
+    if (target.contributedDropsToday >= 4) {
+      setCelebrateMemberName(target.nickname);
+      return;
+    }
+    setWakeUpStatus("sending");
+    wakeUpFriends(roomId, room.name, [target.nickname])
+      .then((result) => {
+        setWakeUpStatus(result);
+        if (wakeUpResetTimerRef.current) {
+          clearTimeout(wakeUpResetTimerRef.current);
+        }
+        wakeUpResetTimerRef.current = setTimeout(
+          () => setWakeUpStatus("idle"),
+          2500,
+        );
+      })
+      .catch(() => setWakeUpStatus("failed"));
+  };
+
   const handleViewHistory = () => {
     setShowDayResult(false);
     navigate(`/oasis/${roomId}/history`);
+  };
+
+  const handleConfirmLeave = async () => {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    try {
+      await leaveRoom();
+      navigate("/", { replace: true });
+    } catch {
+      setIsLeaving(false);
+    }
   };
 
   const inviteLabel =
@@ -420,7 +512,20 @@ export function OasisMainPage() {
 
         <div className={styles.headerCopy}>
           <h1 className={styles.title}>{room.name}</h1>
-          <p className={styles.subtitle}>오늘의 공동 오아시스</p>
+          <div className={styles.subtitleRow}>
+            <p className={styles.subtitle}>우리들의 오아시스</p>
+            {memberId && (
+              <button
+                type="button"
+                className={styles.leaveButton}
+                onClick={() => setLeaveDialogOpen(true)}
+                disabled={isLeaving}
+                aria-label="이 오아시스에서 나가기"
+              >
+                나가기
+              </button>
+            )}
+          </div>
         </div>
 
         <span
@@ -466,9 +571,15 @@ export function OasisMainPage() {
           reducedMotion={effectiveReducedMotion}
           isAnimating={sceneController.isAnimating}
           isInteractionDisabled={
-            isScenePreview || isLoggingWater || pendingUndo !== null
+            isScenePreview ||
+            isLoggingWater ||
+            undoWindow !== null ||
+            wakeUpStatus === "sending"
           }
-          onGiveWater={isScenePreview ? undefined : logWaterCup}
+          onWakeUpMember={isScenePreview ? undefined : handleWakeUpMember}
+          showWakeUpHint={
+            !isScenePreview && !wakeUpHintLearned && hasWakeUpTarget
+          }
           onTravelComplete={sceneController.completeTravel}
           onImpactComplete={sceneController.completeImpact}
         />
@@ -496,7 +607,6 @@ export function OasisMainPage() {
         <WaterLogButton
           hydration={oasisState.myHydration}
           isVisualFeedbackPlaying={sceneController.isAnimating}
-          hasPendingUndo={pendingUndo !== null}
         />
 
         <div className={styles.secondaryActionSlot}>
@@ -536,6 +646,40 @@ export function OasisMainPage() {
         style={{ bottom: `${bottomCTAHeight + 8}px` }}
       />
 
+      <Toast
+        position="bottom"
+        open={
+          wakeUpStatus === "shared" ||
+          wakeUpStatus === "copied" ||
+          wakeUpStatus === "failed"
+        }
+        text={
+          wakeUpStatus === "failed"
+            ? "깨우기 메시지를 보내지 못했어요"
+            : wakeUpStatus === "copied"
+              ? "깨우기 메시지를 복사했어요"
+              : "친구에게 깨우기 메시지를 보냈어요"
+        }
+        duration={2500}
+        onClose={() => setWakeUpStatus("idle")}
+        aria-live="polite"
+        style={{ bottom: `${bottomCTAHeight + 8}px` }}
+      />
+
+      <Toast
+        position="bottom"
+        open={celebrateMemberName !== null}
+        text={
+          celebrateMemberName
+            ? `${celebrateMemberName}님은 오늘 물방울을 모두 채웠어요`
+            : ""
+        }
+        duration={2000}
+        onClose={() => setCelebrateMemberName(null)}
+        aria-live="polite"
+        style={{ bottom: `${bottomCTAHeight + 8}px` }}
+      />
+
       <UndoBanner bottomOffset={bottomCTAHeight} />
 
       <DayResultModal
@@ -545,7 +689,41 @@ export function OasisMainPage() {
         onViewHistory={handleViewHistory}
       />
 
-      {import.meta.env.DEV && (
+      <ConfirmDialog
+        open={leaveDialogOpen}
+        title={
+          <ConfirmDialog.Title>이 오아시스에서 나갈까요?</ConfirmDialog.Title>
+        }
+        description={
+          <ConfirmDialog.Description>
+            오늘 내가 만든 물방울은 오아시스에서 빠지고, 다시 들어오려면 초대가
+            필요해요.
+          </ConfirmDialog.Description>
+        }
+        cancelButton={
+          <ConfirmDialog.CancelButton
+            onClick={() => setLeaveDialogOpen(false)}
+            disabled={isLeaving}
+          >
+            머무르기
+          </ConfirmDialog.CancelButton>
+        }
+        confirmButton={
+          <ConfirmDialog.ConfirmButton
+            color="danger"
+            loading={isLeaving}
+            onClick={() => void handleConfirmLeave()}
+          >
+            나가기
+          </ConfirmDialog.ConfirmButton>
+        }
+        onClose={() => {
+          if (!isLeaving) setLeaveDialogOpen(false);
+        }}
+        closeOnDimmerClick={!isLeaving}
+      />
+
+      {/* {import.meta.env.DEV && (
         <OasisDebugPanel
           actualPercent={sharedProgressPercent}
           previewPercent={scenePreviewPercent}
@@ -560,7 +738,7 @@ export function OasisMainPage() {
           onReducedMotionChange={setScenePreviewReducedMotion}
           onExitPreview={exitScenePreview}
         />
-      )}
+      )} */}
     </ScreenContainer>
   );
 }

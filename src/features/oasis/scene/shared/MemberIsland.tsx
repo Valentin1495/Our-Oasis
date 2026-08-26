@@ -1,6 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { motion } from "motion/react";
-import type { MemberDockPosition } from "../sharedOasisSceneLayout";
+import { Tooltip } from "@toss/tds-mobile";
+import {
+  getWakeUpHintLayout,
+  type MemberDockPosition,
+} from "../sharedOasisSceneLayout";
 import {
   getMemberAccent,
   getMemberIslandStatus,
@@ -18,8 +22,9 @@ interface Props {
   isCurrentMember: boolean;
   isSourceActive: boolean;
   interactionDisabled: boolean;
+  showWakeUpHint?: boolean;
   waterOriginRef?: (node: HTMLSpanElement | null) => void;
-  onGiveWater?: () => void | Promise<void>;
+  onWakeUp?: (memberId: string) => void;
 }
 
 export function MemberIsland({
@@ -33,8 +38,9 @@ export function MemberIsland({
   isCurrentMember,
   isSourceActive,
   interactionDisabled,
+  showWakeUpHint = false,
   waterOriginRef,
-  onGiveWater,
+  onWakeUp,
 }: Props) {
   const normalizedDrops = normalizeMemberDrops(drops);
   const status = getMemberIslandStatus({
@@ -43,6 +49,13 @@ export function MemberIsland({
   });
   const accent = getMemberAccent(id);
   const waterOriginSide = position.xPercent <= 50 ? "right" : "left";
+  const wakeUpHintLayout = getWakeUpHintLayout(position.xPercent);
+  const isComplete = status === "complete";
+  const wakeUpAriaLabel = interactionDisabled
+    ? `${name}의 섬, 처리 중`
+    : isComplete
+      ? `${name}의 섬, 오늘 물방울을 모두 채웠어요`
+      : `${name}의 섬, 오늘 물방울 ${normalizedDrops}개 기여. 깨우기`;
 
   const content: ReactNode = (
     <>
@@ -69,9 +82,26 @@ export function MemberIsland({
           className="shared-oasis-scene__member-water-origin"
           data-water-origin-side={waterOriginSide}
         />
-        <span className="shared-oasis-scene__member-avatar">
-          <img src={avatarImage} alt="" />
-        </span>
+        <Tooltip
+          message="눌러서 깨워봐요"
+          open={showWakeUpHint}
+          className={
+            wakeUpHintLayout.horizontalInset > 0
+              ? "shared-oasis-scene__wake-up-tooltip--left"
+              : wakeUpHintLayout.horizontalInset < 0
+                ? "shared-oasis-scene__wake-up-tooltip--right"
+                : undefined
+          }
+          placement="top"
+          size="small"
+          anchorPositionByRatio={wakeUpHintLayout.anchorPositionByRatio}
+          clipToEnd={wakeUpHintLayout.clipToEnd}
+          style={{ translate: `${wakeUpHintLayout.horizontalInset}px 0` }}
+        >
+          <span className="shared-oasis-scene__member-avatar">
+            <img src={avatarImage} alt="" />
+          </span>
+        </Tooltip>
         {status === "complete" && (
           <span
             className="shared-oasis-scene__member-complete"
@@ -125,26 +155,22 @@ export function MemberIsland({
       }
     >
       {isCurrentMember ? (
+        <span className="shared-oasis-scene__member-card" aria-hidden="true">
+          {content}
+        </span>
+      ) : (
         <button
           type="button"
           className="shared-oasis-scene__member-card shared-oasis-scene__member-button"
           disabled={interactionDisabled}
-          aria-label={
-            interactionDisabled
-              ? `${name}의 섬, 물 기록 처리 중`
-              : `${name}의 섬, 오늘 물방울 ${normalizedDrops}개 기여. 물 한 잔 채우기`
-          }
+          aria-label={wakeUpAriaLabel}
           onClick={() => {
-            if (interactionDisabled || !onGiveWater) return;
-            void onGiveWater();
+            if (interactionDisabled || !onWakeUp) return;
+            onWakeUp(id);
           }}
         >
           {content}
         </button>
-      ) : (
-        <span className="shared-oasis-scene__member-card" aria-hidden="true">
-          {content}
-        </span>
       )}
 
       <span className="visually-hidden">

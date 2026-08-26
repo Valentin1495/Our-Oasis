@@ -47,6 +47,14 @@ interface MemberState {
   eligibleFromDayIndex: number;
 }
 
+interface ConfirmedWaterLog {
+  logId: string;
+  roomId: string;
+  memberId: string;
+  recordedAt: string;
+  dropsContributed: number;
+}
+
 interface RoomState {
   room: Room;
   members: Map<string, MemberState>;
@@ -57,10 +65,7 @@ interface RoomState {
 
 export class MockOasisRepository implements OasisRepository {
   private rooms = new Map<string, RoomState>();
-  private pendingWaterLogs = new Map<
-    string,
-    { roomId: string; memberId: string; recordedAt: string }
-  >();
+  private confirmedWaterLogs = new Map<string, ConfirmedWaterLog>();
 
   async createRoom(input: CreateRoomInput): Promise<RoomJoinResult> {
     await delay();
@@ -239,65 +244,6 @@ export class MockOasisRepository implements OasisRepository {
     const ms = state.members.get(memberId);
     if (!ms) throw new Error("멤버를 찾을 수 없어요.");
 
-    const projectedCups = ms.cupsLogged + 1;
-    const newConsumedMl = projectedCups * ms.profile.cupMl;
-    const newPercent = computePersonalProgressPercent(
-      projectedCups,
-      ms.profile.cupMl,
-      ms.profile.dailyGoalMl,
-    );
-    const isEligible = ms.eligibleFromDayIndex <= state.room.dayIndex;
-    const drops = isEligible
-      ? computeContributionDropsFromMl(
-          newConsumedMl,
-          ms.profile.dailyGoalMl,
-          ms.member.contributedDropsToday,
-        )
-      : 0;
-
-    const today = this.ensureTodaySnapshot(state);
-    const maxDrops = today.maxDropsSnapshot;
-    const projectedTotalDrops = state.totalDrops + drops;
-    const sharedProgress =
-      maxDrops === 0
-        ? 0
-        : Math.min(100, Math.round((projectedTotalDrops / maxDrops) * 100));
-
-    const logId = uid();
-    const recordedAt = now();
-    const expiresAt = new Date(Date.now() + 5000).toISOString();
-    this.pendingWaterLogs.set(logId, { roomId, memberId, recordedAt });
-
-    return {
-      logEntry: { logId, memberId, roomId, recordedAt, expiresAt },
-      newPersonalProgressPercent: newPercent,
-      dropsContributed: drops,
-      newSharedProgressPercent: sharedProgress,
-      newConsumedMl,
-      contributionDropsTotal: ms.member.contributedDropsToday + drops,
-      canUndo: true,
-    };
-  }
-
-  async confirmWaterCup(
-    roomId: string,
-    memberId: string,
-    logId: string,
-  ): Promise<WaterLogResult> {
-    await delay(200);
-    const pending = this.pendingWaterLogs.get(logId);
-    if (
-      !pending ||
-      pending.roomId !== roomId ||
-      pending.memberId !== memberId
-    ) {
-      throw new Error("확정할 물 기록을 찾을 수 없어요.");
-    }
-
-    const state = this.rooms.get(roomId);
-    const ms = state?.members.get(memberId);
-    if (!state || !ms) throw new Error("멤버를 찾을 수 없어요.");
-
     ms.cupsLogged += 1;
     const newConsumedMl = ms.cupsLogged * ms.profile.cupMl;
     const newPercent = computePersonalProgressPercent(
@@ -309,7 +255,7 @@ export class MockOasisRepository implements OasisRepository {
     const drops = isEligible
       ? computeContributionDropsFromMl(
           newConsumedMl,
-          ms.profile.dailyGoalMl,
+          ms.profile.cupMl,
           ms.member.contributedDropsToday,
         )
       : 0;
@@ -335,24 +281,27 @@ export class MockOasisRepository implements OasisRepository {
     todayRecord.isFullComplete = completion.isFullComplete;
     todayRecord.allParticipated =
       todayRecord.memberCountSnapshot > 0 &&
-      todayRecord.participatingMemberCount ===
-        todayRecord.memberCountSnapshot;
+      todayRecord.participatingMemberCount === todayRecord.memberCountSnapshot;
 
-    this.pendingWaterLogs.delete(logId);
+    const logId = uid();
+    const recordedAt = now();
+    const expiresAt = new Date(Date.now() + 5000).toISOString();
+    this.confirmedWaterLogs.set(logId, {
+      logId,
+      roomId,
+      memberId,
+      recordedAt,
+      dropsContributed: drops,
+    });
+
     return {
-      logEntry: {
-        logId,
-        memberId,
-        roomId,
-        recordedAt: pending.recordedAt,
-        expiresAt: now(),
-      },
+      logEntry: { logId, memberId, roomId, recordedAt, expiresAt },
       newPersonalProgressPercent: newPercent,
       dropsContributed: drops,
       newSharedProgressPercent: todayRecord.completionPercent,
       newConsumedMl,
       contributionDropsTotal: ms.member.contributedDropsToday,
-      canUndo: false,
+      canUndo: true,
     };
   }
 
@@ -362,16 +311,118 @@ export class MockOasisRepository implements OasisRepository {
     logId: string,
   ): Promise<void> {
     await delay(200);
-    const pending = this.pendingWaterLogs.get(logId);
-    if (pending?.roomId === roomId && pending.memberId === memberId) {
-      this.pendingWaterLogs.delete(logId);
+    const confirmed = this.confirmedWaterLogs.get(logId);
+    if (
+      !confirmed ||
+      confirmed.roomId !== roomId ||
+      confirmed.memberId !== memberId
+    ) {
+      throw new Error("되돌릴 물 기록을 찾을 수 없어요.");
     }
+
+    // 이후에 새 기록이 추가됐으면 되돌릴 수 없다
+    const hasNewer = Array.from(this.confirmedWaterLogs.values()).some(
+      (log) =>
+        log.memberId === memberId &&
+        log.roomId === roomId &&
+        log.logId !== logId &&
+        log.recordedAt > confirmed.recordedAt,
+    );
+    if (hasNewer) {
+      throw new Error("이미 새로운 기록이 있어서 되돌릴 수 없어요.");
+    }
+
+    const state = this.rooms.get(roomId);
+    const ms = state?.members.get(memberId);
+    if (!state || !ms) throw new Error("멤버를 찾을 수 없어요.");
+
+    ms.cupsLogged = Math.max(0, ms.cupsLogged - 1);
+    const newPercent = computePersonalProgressPercent(
+      ms.cupsLogged,
+      ms.profile.cupMl,
+      ms.profile.dailyGoalMl,
+    );
+    const newDrops = Math.max(
+      0,
+      ms.member.contributedDropsToday - confirmed.dropsContributed,
+    );
+
+    ms.member = {
+      ...ms.member,
+      todayProgressPercent: newPercent,
+      contributedDropsToday: newDrops,
+      hasWaterRecordToday: ms.cupsLogged > 0,
+    };
+    state.totalDrops = Math.max(0, state.totalDrops - confirmed.dropsContributed);
+
+    this.confirmedWaterLogs.delete(logId);
+
+    if (ms.cupsLogged === 0) {
+      state.confirmedMembersToday.delete(memberId);
+    }
+
+    const todayRecord = this.ensureTodaySnapshot(state);
+    const completion = getCompletionState(
+      state.totalDrops,
+      todayRecord.maxDropsSnapshot,
+    );
+    todayRecord.totalDrops = state.totalDrops;
+    todayRecord.completionPercent = completion.completionPercent;
+    todayRecord.participatingMemberCount = state.confirmedMembersToday.size;
+    todayRecord.isComplete = completion.isComplete;
+    todayRecord.isFullComplete = completion.isFullComplete;
+    todayRecord.allParticipated =
+      todayRecord.memberCountSnapshot > 0 &&
+      todayRecord.participatingMemberCount === todayRecord.memberCountSnapshot;
   }
 
-  async wakeUpFriends(roomId: string): Promise<void> {
-    void roomId;
-    await delay(300);
-    // 실제 알림 발송은 백엔드 구현 후 처리
+  async leaveRoom(roomId: string, memberId: string): Promise<void> {
+    await delay(200);
+    const state = this.rooms.get(roomId);
+    if (!state) throw new Error("방을 찾을 수 없어요.");
+    if (!state.members.has(memberId)) {
+      throw new Error("방에 참여 중이 아니에요.");
+    }
+
+    state.members.delete(memberId);
+    state.confirmedMembersToday.delete(memberId);
+    for (const [logId, log] of this.confirmedWaterLogs) {
+      if (log.roomId === roomId && log.memberId === memberId) {
+        this.confirmedWaterLogs.delete(logId);
+      }
+    }
+
+    if (state.members.size === 0) {
+      this.rooms.delete(roomId);
+      return;
+    }
+
+    const today = this.getTodayRecord(state);
+    if (!today) return;
+
+    const eligible = Array.from(state.members.values()).filter(
+      (member) => member.eligibleFromDayIndex <= state.room.dayIndex,
+    );
+    today.memberCountSnapshot = eligible.length;
+    today.maxDropsSnapshot = today.memberCountSnapshot * 4;
+    today.totalDrops = eligible.reduce(
+      (sum, member) => sum + member.member.contributedDropsToday,
+      0,
+    );
+    today.participatingMemberCount = eligible.filter(
+      (member) => member.member.hasWaterRecordToday,
+    ).length;
+    state.totalDrops = today.totalDrops;
+    const completion = getCompletionState(
+      today.totalDrops,
+      today.maxDropsSnapshot,
+    );
+    today.completionPercent = completion.completionPercent;
+    today.isComplete = completion.isComplete;
+    today.isFullComplete = completion.isFullComplete;
+    today.allParticipated =
+      today.memberCountSnapshot > 0 &&
+      today.participatingMemberCount === today.memberCountSnapshot;
   }
 
   async getWeeklyHistory(roomId: string): Promise<DayRecord[]> {
@@ -430,10 +481,7 @@ export class MockOasisRepository implements OasisRepository {
           id: p.id,
           nickname: p.nickname,
           todayProgressPercent: progress,
-          contributedDropsToday: getContributionDrops(
-            cups * p.cupMl,
-            p.dailyGoalMl,
-          ),
+          contributedDropsToday: getContributionDrops(cups),
           hasWaterRecordToday: cups > 0,
         },
         cupsLogged: cups,

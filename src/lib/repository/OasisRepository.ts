@@ -19,12 +19,8 @@ export interface OasisRepository {
   getMyRooms(tossAnonymousKey: string): Promise<MyRoomSummary[]>;
   getOasisState(roomId: string, memberId?: string | null): Promise<OasisState>;
   logWaterCup(roomId: string, memberId: string): Promise<WaterLogResult>;
-  confirmWaterCup(
-    roomId: string,
-    memberId: string,
-    logId: string,
-  ): Promise<WaterLogResult>;
+  /** 기록 직후 5초 창 내에서만 되돌릴 수 있다. 창이 지났거나 이후 기록이 추가됐으면 서버가 에러를 반환한다. */
   undoWaterCup(roomId: string, memberId: string, logId: string): Promise<void>;
-  wakeUpFriends(roomId: string): Promise<void>;
+  leaveRoom(roomId: string, memberId: string): Promise<void>;
   getWeeklyHistory(roomId: string): Promise<DayRecord[]>;
 }

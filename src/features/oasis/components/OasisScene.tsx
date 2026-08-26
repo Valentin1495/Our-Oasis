@@ -19,7 +19,8 @@ interface Props {
   reducedMotion?: boolean;
   isAnimating?: boolean;
   isInteractionDisabled?: boolean;
-  onGiveWater?: () => void | Promise<void>;
+  onWakeUpMember?: (memberId: string) => void;
+  showWakeUpHint?: boolean;
   onTravelComplete?: () => void;
   onImpactComplete?: () => void;
 }
@@ -53,7 +54,8 @@ export function OasisScene({
   reducedMotion = false,
   isAnimating = false,
   isInteractionDisabled = false,
-  onGiveWater,
+  onWakeUpMember,
+  showWakeUpHint = false,
   onTravelComplete,
   onImpactComplete,
 }: Props) {
@@ -71,7 +73,8 @@ export function OasisScene({
       impactIndex={impactIndex}
       isAnimating={isAnimating}
       isInteractionDisabled={isInteractionDisabled}
-      onGiveWater={onGiveWater}
+      onWakeUpMember={onWakeUpMember}
+      showWakeUpHint={showWakeUpHint}
       onTravelComplete={onTravelComplete}
       onImpactComplete={onImpactComplete}
     />

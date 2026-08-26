@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, TextField } from '@toss/tds-mobile';
+import { extractRoomIdFromInput } from './inviteLink';
 
 interface Props {
   initialRoomId?: string;
@@ -17,9 +18,9 @@ export function JoinRoomForm({ initialRoomId = '', onSubmit, isSubmitting = fals
     <div style={{ padding: '0 var(--screen-padding-x)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <TextField
         label="초대 코드"
-        placeholder="친구에게 받은 초대 링크를 붙여넣기하거나 코드를 입력하세요"
+        placeholder="친구에게 받은 초대 링크를 붙여넣기 하세요"
         value={roomId}
-        onChange={(e) => setRoomId(e.target.value.trim())}
+        onChange={(e) => setRoomId(extractRoomIdFromInput(e.target.value))}
         variant="box"
         hasError={!!error}
         help={error ?? undefined}

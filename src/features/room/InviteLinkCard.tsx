@@ -1,13 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@toss/tds-mobile";
-import { buildInviteUrl, copyInviteLink } from "./inviteLink";
+import { buildInviteUrl, shareInviteLink } from "./inviteLink";
+import type { ShareInviteLinkResult } from "./inviteLink";
 
 interface Props {
   roomId: string;
 }
 
+const RESULT_LABEL: Record<ShareInviteLinkResult, string> = {
+  shared: "공유 시트를 열었어요",
+  copied: "복사 완료 ✓",
+  failed: "공유에 실패했어요. 다시 시도해주세요.",
+};
+
 export function InviteLinkCard({ roomId }: Props) {
-  const [copied, setCopied] = useState(false);
+  const [result, setResult] = useState<ShareInviteLinkResult | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -17,13 +24,11 @@ export function InviteLinkCard({ roomId }: Props) {
     [],
   );
 
-  async function handleCopy() {
-    const didCopy = await copyInviteLink(roomId);
-    setCopied(didCopy);
+  async function handleShare() {
+    const shareResult = await shareInviteLink(roomId);
+    setResult(shareResult);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-    if (didCopy) {
-      resetTimerRef.current = setTimeout(() => setCopied(false), 2500);
-    }
+    resetTimerRef.current = setTimeout(() => setResult(null), 2500);
   }
 
   return (
@@ -63,12 +68,12 @@ export function InviteLinkCard({ roomId }: Props) {
       </div>
       <Button
         size="medium"
-        variant={copied ? "weak" : "fill"}
-        onClick={handleCopy}
-        aria-label={copied ? "초대 링크 복사 완료" : "초대 링크 복사하기"}
+        variant={result ? "weak" : "fill"}
+        onClick={handleShare}
+        aria-label={result ? RESULT_LABEL[result] : "초대 링크 공유하기"}
         style={{ width: "100%" }}
       >
-        {copied ? "복사 완료 ✓" : "초대 링크 복사하기"}
+        {result ? RESULT_LABEL[result] : "초대 링크 공유하기"}
       </Button>
     </div>
   );

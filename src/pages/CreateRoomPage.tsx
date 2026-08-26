@@ -8,7 +8,8 @@ import { getAnonymousUserKey } from '../lib/toss/getAnonymousUserKey';
 
 export function CreateRoomPage() {
   const navigate = useNavigate();
-  const { profile, repository, setCurrentRoom, setProfile } = useOasisStore();
+  const { profile, repository, setCurrentRoom, setProfile, rememberJoinedRoom } =
+    useOasisStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
@@ -28,8 +29,15 @@ export function CreateRoomPage() {
         tossAnonymousKey,
       });
       setCurrentRoom(room);
-      // mock이 발급한 실제 memberId로 store 동기화
+      // 서버가 발급한 실제 memberId로 store 동기화
       setProfile(profile, memberId);
+      rememberJoinedRoom({
+        room,
+        memberId,
+        nickname: profile.nickname,
+        cupMl: profile.cupMl,
+        dailyGoalMl: profile.dailyGoalMl,
+      });
       setCreatedRoomId(room.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : '방 만들기에 실패했어요.');

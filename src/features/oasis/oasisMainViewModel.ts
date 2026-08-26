@@ -70,7 +70,9 @@ export function getTodayMaxDrops(
   const today = state.history.find(
     (record) => record.dayIndex === state.room.dayIndex,
   );
-  return today?.maxDropsSnapshot ?? state.members.length * 4;
+  return today?.maxDropsSnapshot && today.maxDropsSnapshot > 0
+    ? today.maxDropsSnapshot
+    : state.members.length * 4;
 }
 
 export interface ParticipantSummary {

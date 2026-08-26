@@ -123,15 +123,11 @@ export function diffOasisSceneSnapshots(
   let kind: OasisSceneEventKind = "reconciliation";
   let actorMemberId: string | null = null;
 
-  if (dropsAdded > 0 && before.progress.maxDrops === after.progress.maxDrops) {
+  if (dropsAdded > 0) {
     kind = "contribution";
     actorMemberId =
       contributionMembers.length === 1 ? contributionMembers[0] : null;
-  } else if (
-    dropsAdded === 0 &&
-    participantMembers.length > 0 &&
-    before.progress.maxDrops === after.progress.maxDrops
-  ) {
+  } else if (dropsAdded === 0 && participantMembers.length > 0) {
     kind = "participation-only";
     actorMemberId =
       participantMembers.length === 1 ? participantMembers[0] : null;

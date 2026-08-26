@@ -83,8 +83,9 @@ function toWaterLogResult(
 
 /**
  * Supabase(Postgres)를 실제 백엔드로 사용하는 구현체.
- * 물 기록 대기/확정/취소는 동시성 문제를 피하기 위해 DB의 RPC 함수
- * (log_water_cup, confirm_water_cup, undo_water_cup)에서 원자적으로 처리한다.
+ * 물 기록은 기록 즉시 확정하고, 5초 창 내의 되돌리기까지 동시성 문제를
+ * 피하기 위해 DB의 RPC 함수(log_water_cup, undo_confirmed_water_cup)에서
+ * 원자적으로 처리한다.
  */
 export class SupabaseOasisRepository implements OasisRepository {
   /**
@@ -366,7 +367,7 @@ export class SupabaseOasisRepository implements OasisRepository {
     memberId: string,
     logId: string,
   ): Promise<void> {
-    const { error } = await supabase.rpc("undo_water_cup", {
+    const { error } = await supabase.rpc("undo_confirmed_water_cup", {
       p_room_id: roomId,
       p_member_id: memberId,
       p_log_id: logId,
@@ -374,30 +375,12 @@ export class SupabaseOasisRepository implements OasisRepository {
     if (error) throw new Error(error.message);
   }
 
-  async confirmWaterCup(
-    roomId: string,
-    memberId: string,
-    logId: string,
-  ): Promise<WaterLogResult> {
-    const { data, error } = await supabase.rpc("confirm_water_cup", {
+  async leaveRoom(roomId: string, memberId: string): Promise<void> {
+    const { error } = await supabase.rpc("leave_room", {
       p_room_id: roomId,
       p_member_id: memberId,
-      p_log_id: logId,
     });
     if (error) throw new Error(error.message);
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row) throw new Error("물 기록 확정 결과를 찾을 수 없어요.");
-    return toWaterLogResult(
-      row as Record<string, unknown>,
-      roomId,
-      memberId,
-      false,
-    );
-  }
-
-  async wakeUpFriends(roomId: string): Promise<void> {
-    void roomId;
-    // 실제 알림 발송(푸시 등)은 별도 백엔드 연동 후 구현한다.
   }
 
   async getWeeklyHistory(roomId: string): Promise<DayRecord[]> {

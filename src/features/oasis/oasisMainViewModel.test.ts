@@ -98,6 +98,38 @@ describe("getTodayMaxDrops", () => {
     ).toBe(16);
   });
 
+  it("오늘 기록의 snapshot이 0이면 아직 초기화되지 않은 것으로 보고 멤버당 4개로 계산한다", () => {
+    const members: Member[] = Array.from({ length: 2 }, (_, index) => ({
+      id: `${index}`,
+      nickname: `${index}`,
+      todayProgressPercent: 0,
+      contributedDropsToday: 0,
+      hasWaterRecordToday: false,
+    }));
+
+    expect(
+      getTodayMaxDrops({
+        room,
+        history: [
+          {
+            roomId: room.id,
+            dayIndex: 2,
+            localDate: "2026-07-18",
+            totalDrops: 0,
+            memberCountSnapshot: 0,
+            maxDropsSnapshot: 0,
+            completionPercent: 0,
+            participatingMemberCount: 0,
+            isComplete: false,
+            isFullComplete: false,
+            allParticipated: false,
+          },
+        ],
+        members,
+      }),
+    ).toBe(8);
+  });
+
   it("오늘 기록이 없으면 멤버당 4개로 계산한다", () => {
     const members: Member[] = Array.from({ length: 3 }, (_, index) => ({
       id: `${index}`,

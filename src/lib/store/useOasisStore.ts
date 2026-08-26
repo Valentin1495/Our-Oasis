@@ -4,10 +4,17 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { supabaseRepository } from "../supabase/SupabaseOasisRepository";
 import type { OasisRepository } from "../repository/OasisRepository";
-import type { OasisState, Profile, Room, WaterLogEntry } from "../../types";
+import type {
+  MyRoomSummary,
+  OasisState,
+  Profile,
+  Room,
+  WaterLogEntry,
+} from "../../types";
 import { getAnonymousUserKey } from "../toss/getAnonymousUserKey";
 
-interface PendingUndo {
+/** 기록 직후 5초 내에 되돌릴 수 있는 창. 버튼은 막지 않는다. */
+interface UndoWindow {
   logEntry: WaterLogEntry;
   timerId: ReturnType<typeof setTimeout>;
 }
@@ -31,6 +38,12 @@ interface OasisStore {
 
   // 방
   currentRoom: Room | null;
+  /**
+   * 이 기기에서 참여했던 방 목록(최근 참여순). 앱인토스 익명 식별키 조회가
+   * 실패하거나(브라우저 미리보기, 구버전 SDK 등) 느려도 "참여 중인 오아시스"
+   * 목록을 항상 보여줄 수 있도록 서버 조회와 별개로 로컬에 보존한다.
+   */
+  joinedRooms: MyRoomSummary[];
 
   // 오아시스 상태
   oasisState: OasisState | null;
@@ -39,11 +52,10 @@ interface OasisStore {
 
   // 물 기록 상태
   isLoggingWater: boolean;
-  pendingUndo: PendingUndo | null;
+  /** 되돌리기 가능한 창이 열려 있을 때 설정된다. 버튼은 막지 않는다. */
+  undoWindow: UndoWindow | null;
   waterLogFeedback: WaterLogFeedback | null;
   recentConfirmedWaterAt: number[];
-
-  // 물 기록 결과 UI가 같은 payload에서도 다시 반응할 수 있게 하는 식별자
   waterLogFeedbackId: number;
 
   // 실시간 구독 채널
@@ -52,25 +64,33 @@ interface OasisStore {
   // 액션
   setProfile: (profile: Profile, memberId: string) => void;
   setCurrentRoom: (room: Room) => void;
+  rememberJoinedRoom: (summary: MyRoomSummary) => void;
+  forgetJoinedRoom: (roomId: string) => void;
   loadOasisState: (roomId: string) => Promise<void>;
   subscribeToRoom: (roomId: string) => void;
   unsubscribeFromRoom: () => void;
   logWaterCup: () => Promise<void>;
   undoWaterCup: () => Promise<void>;
-  confirmPendingUndo: () => Promise<void>;
-  wakeUpFriends: () => Promise<void>;
+  leaveRoom: () => Promise<void>;
   reset: () => void;
 }
+
+// loadOasisState는 초기 진입, 내 물 기록 직후, 다른 멤버의 실시간 변경 알림 등
+// 여러 곳에서 서로 조율 없이 동시에 호출될 수 있다. 네트워크 응답 순서는 호출
+// 순서와 다를 수 있어서, 요청마다 순번을 매겨 "가장 나중에 시작한 요청"의
+// 응답만 반영하고 먼저 시작했지만 늦게 도착한(오래된) 응답은 버린다.
+let loadOasisStateRequestId = 0;
 
 const initialState = {
   profile: null,
   memberId: null,
   currentRoom: null,
+  joinedRooms: [] as MyRoomSummary[],
   oasisState: null,
   isLoadingOasis: false,
   oasisError: null,
   isLoggingWater: false,
-  pendingUndo: null,
+  undoWindow: null,
   waterLogFeedback: null,
   recentConfirmedWaterAt: [],
   waterLogFeedbackId: 0,
@@ -91,7 +111,27 @@ export const useOasisStore = create<OasisStore>()(
         set({ currentRoom: room });
       },
 
+      rememberJoinedRoom(summary) {
+        set((state) => ({
+          joinedRooms: [
+            summary,
+            ...state.joinedRooms.filter(
+              (item) => item.room.id !== summary.room.id,
+            ),
+          ],
+        }));
+      },
+
+      forgetJoinedRoom(roomId) {
+        set((state) => ({
+          joinedRooms: state.joinedRooms.filter(
+            (item) => item.room.id !== roomId,
+          ),
+        }));
+      },
+
       async loadOasisState(roomId) {
+        const requestId = ++loadOasisStateRequestId;
         set({ isLoadingOasis: true, oasisError: null });
         try {
           const beforeLoad = get();
@@ -104,6 +144,8 @@ export const useOasisStore = create<OasisStore>()(
             roomId,
             sessionMemberId,
           );
+          if (requestId !== loadOasisStateRequestId) return;
+
           const current = get();
           const hasValidSession =
             current.currentRoom?.id === roomId &&
@@ -124,11 +166,14 @@ export const useOasisStore = create<OasisStore>()(
               )
             : undefined;
 
+          if (requestId !== loadOasisStateRequestId) return;
+
           if (membership) {
             const restoredOasisState = await repository.getOasisState(
               roomId,
               membership.memberId,
             );
+            if (requestId !== loadOasisStateRequestId) return;
             set({
               oasisState: restoredOasisState,
               currentRoom: membership.room,
@@ -141,9 +186,15 @@ export const useOasisStore = create<OasisStore>()(
               },
               isLoadingOasis: false,
             });
+            get().rememberJoinedRoom(membership);
             return;
           }
 
+          // 익명 식별키로도 세션을 복구할 수 없었을 뿐, 로컬에 남아있는
+          // joinedRooms 기록이 잘못됐다고 확정할 수는 없으므로(키 조회 실패
+          // 등의 가능성) 여기서는 로컬 목록을 건드리지 않는다. 방이 실제로
+          // 존재하지 않는 경우는 getOasisState가 던지는 예외에서 별도로
+          // 처리한다.
           set({
             oasisState,
             currentRoom: null,
@@ -152,6 +203,7 @@ export const useOasisStore = create<OasisStore>()(
             isLoadingOasis: false,
           });
         } catch (e) {
+          if (requestId !== loadOasisStateRequestId) return;
           set({
             isLoadingOasis: false,
             oasisError:
@@ -160,11 +212,6 @@ export const useOasisStore = create<OasisStore>()(
         }
       },
 
-      /**
-       * 다른 멤버가 물을 기록해 room_members/day_records가 바뀌면
-       * 실시간으로 오아시스 상태를 다시 불러온다.
-       * 단, 내 확정 대기(pendingUndo) 중에는 화면을 먼저 바꾸지 않는다.
-       */
       subscribeToRoom(roomId) {
         get().unsubscribeFromRoom();
 
@@ -179,7 +226,6 @@ export const useOasisStore = create<OasisStore>()(
               filter: `room_id=eq.${roomId}`,
             },
             () => {
-              if (get().pendingUndo) return;
               void get().loadOasisState(roomId);
             },
           )
@@ -192,7 +238,6 @@ export const useOasisStore = create<OasisStore>()(
               filter: `room_id=eq.${roomId}`,
             },
             () => {
-              if (get().pendingUndo) return;
               void get().loadOasisState(roomId);
             },
           )
@@ -210,8 +255,7 @@ export const useOasisStore = create<OasisStore>()(
       },
 
       async logWaterCup() {
-        const { currentRoom, memberId, repository, pendingUndo, oasisState } =
-          get();
+        const { currentRoom, memberId, repository, oasisState } = get();
         if (
           !currentRoom ||
           currentRoom.id !== oasisState?.room.id ||
@@ -225,51 +269,21 @@ export const useOasisStore = create<OasisStore>()(
         }
         if (get().isLoggingWater) return;
 
+        // 이미 열려있는 되돌리기 창은 조용히 닫는다. 이전 기록은 이미 DB에 확정된
+        // 상태이므로 별도로 commit할 필요 없다.
+        const existingUndo = get().undoWindow;
+        if (existingUndo) {
+          clearTimeout(existingUndo.timerId);
+          set({ undoWindow: null });
+        }
+
         set({ isLoggingWater: true, oasisError: null });
         try {
-          // 연속 기록이면 앞선 컵을 먼저 확정한 후 새 대기 기록을 만든다.
-          if (pendingUndo) {
-            clearTimeout(pendingUndo.timerId);
-            await get().confirmPendingUndo();
-            if (get().oasisError) {
-              set({ isLoggingWater: false });
-              return;
-            }
-          }
-
           const result = await repository.logWaterCup(currentRoom.id, memberId);
 
-          // 배너가 떠 있는 동안은 물방울/진행률/오아시스를 아직 바꾸지 않는다.
-          const timerId = setTimeout(() => {
-            void get().confirmPendingUndo();
-          }, 5000);
-
-          set({
-            isLoggingWater: false,
-            pendingUndo: { logEntry: result.logEntry, timerId },
-          });
-        } catch (e) {
-          set({
-            isLoggingWater: false,
-            oasisError: e instanceof Error ? e.message : "기록에 실패했어요.",
-          });
-        }
-      },
-
-      /** 5초가 지나면 DB에서 실제 집계를 확정한다. 이 변경만 다른 사용자에게 실시간 전파된다. */
-      async confirmPendingUndo() {
-        const { pendingUndo, memberId, currentRoom, repository } = get();
-        if (!pendingUndo || !memberId || !currentRoom) return;
-
-        clearTimeout(pendingUndo.timerId);
-        try {
-          const result = await repository.confirmWaterCup(
-            currentRoom.id,
-            memberId,
-            pendingUndo.logEntry.logId,
-          );
-          set({ pendingUndo: null });
+          // 기록 즉시 오아시스 상태 반영
           await get().loadOasisState(currentRoom.id);
+
           const goalMl = get().profile?.dailyGoalMl ?? 0;
           const confirmedAt = Date.now();
           const recentConfirmedWaterAt = [
@@ -285,71 +299,94 @@ export const useOasisStore = create<OasisStore>()(
             contributionDropsTotal: result.contributionDropsTotal,
             consumedMl: result.newConsumedMl,
             goalMl,
-            warning:
-              isRapidIncrease
-                ? "짧은 시간에 많은 양이 기록됐어요. 실제로 마신 양인지 확인해 주세요."
-                : goalMl > 0 && result.newConsumedMl >= goalMl * 1.5
-                  ? "오늘 목표를 많이 넘겼어요. 실제로 마신 양인지 확인해 주세요."
+            warning: isRapidIncrease
+              ? "짧은 시간에 많은 양이 기록됐어요. 실제로 마신 양인지 확인해 주세요."
+              : goalMl > 0 && result.newConsumedMl >= goalMl * 1.5
+                ? "오늘 목표를 많이 넘겼어요. 실제로 마신 양인지 확인해 주세요."
                 : null,
           };
-          if (result.dropsContributed > 0) {
-            set({
-              waterLogFeedback: feedback,
-              recentConfirmedWaterAt,
-              waterLogFeedbackId: get().waterLogFeedbackId + 1,
-            });
-          } else {
-            set({
-              waterLogFeedback: feedback,
-              recentConfirmedWaterAt,
-              waterLogFeedbackId: get().waterLogFeedbackId + 1,
-            });
-          }
+
+          // 5초 되돌리기 창 (버튼은 막지 않음)
+          const timerId = setTimeout(() => {
+            set({ undoWindow: null });
+          }, 5000);
+
+          set({
+            isLoggingWater: false,
+            undoWindow: { logEntry: result.logEntry, timerId },
+            waterLogFeedback: feedback,
+            recentConfirmedWaterAt,
+            waterLogFeedbackId: get().waterLogFeedbackId + 1,
+          });
         } catch (e) {
           set({
-            pendingUndo: null,
-            oasisError: e instanceof Error ? e.message : "확정에 실패했어요.",
+            isLoggingWater: false,
+            oasisError: e instanceof Error ? e.message : "기록에 실패했어요.",
           });
         }
       },
 
       async undoWaterCup() {
-        const { currentRoom, memberId, repository, pendingUndo } = get();
-        if (!currentRoom || !memberId || !pendingUndo) return;
+        const { currentRoom, memberId, repository, undoWindow } = get();
+        if (!currentRoom || !memberId || !undoWindow) return;
 
-        clearTimeout(pendingUndo.timerId);
-        // 확정 전 취소이므로 집계 상태는 건드리지 않고 대기 로그만 삭제한다.
-        set({ pendingUndo: null });
+        clearTimeout(undoWindow.timerId);
+        set({ undoWindow: null });
 
         try {
           await repository.undoWaterCup(
             currentRoom.id,
             memberId,
-            pendingUndo.logEntry.logId,
+            undoWindow.logEntry.logId,
           );
+          // 되돌리기 성공 → 오아시스 상태 다시 조회
+          await get().loadOasisState(currentRoom.id);
         } catch (e) {
-          set({
-            oasisError:
-              e instanceof Error ? e.message : "실행 취소에 실패했어요.",
-          });
+          // 창이 만료됐거나 이후 기록이 추가돼 되돌릴 수 없는 경우는 조용히 처리
+          const message = e instanceof Error ? e.message : "";
+          const isExpectedFailure =
+            message.includes("시간이 지났") ||
+            message.includes("새로운 기록이 있") ||
+            message.includes("찾을 수 없");
+          if (!isExpectedFailure) {
+            set({
+              oasisError: message || "실행 취소에 실패했어요.",
+            });
+          }
         }
       },
 
-      async wakeUpFriends() {
-        const { currentRoom, repository } = get();
-        if (!currentRoom) return;
+      async leaveRoom() {
+        const { currentRoom, memberId, repository } = get();
+        if (!currentRoom || !memberId) {
+          set({ oasisError: "참여 중인 오아시스가 없어요." });
+          throw new Error("참여 중인 오아시스가 없어요.");
+        }
+
         try {
-          await repository.wakeUpFriends(currentRoom.id);
-        } catch {
-          // 알림 실패는 조용히 무시
+          await repository.leaveRoom(currentRoom.id, memberId);
+          get().forgetJoinedRoom(currentRoom.id);
+          get().reset();
+        } catch (e) {
+          set({
+            oasisError:
+              e instanceof Error
+                ? e.message
+                : "오아시스에서 나가지 못했어요.",
+          });
+          throw e instanceof Error
+            ? e
+            : new Error("오아시스에서 나가지 못했어요.");
         }
       },
 
       reset() {
-        const { pendingUndo } = get();
-        if (pendingUndo) clearTimeout(pendingUndo.timerId);
+        const { undoWindow, joinedRooms } = get();
+        if (undoWindow) clearTimeout(undoWindow.timerId);
         get().unsubscribeFromRoom();
-        set({ ...initialState });
+        // joinedRooms는 이 기기의 전체 참여 이력이므로, 방 하나를 나가거나
+        // 세션을 초기화하더라도 다른 방 목록은 그대로 유지한다.
+        set({ ...initialState, joinedRooms });
       },
     }),
     {
@@ -358,6 +395,7 @@ export const useOasisStore = create<OasisStore>()(
         profile: state.profile,
         memberId: state.memberId,
         currentRoom: state.currentRoom,
+        joinedRooms: state.joinedRooms,
       }),
     },
   ),

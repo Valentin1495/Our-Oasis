@@ -22,6 +22,12 @@ export interface OrganicProgress {
   lifeProgress: number;
 }
 
+export interface WakeUpHintLayout {
+  anchorPositionByRatio: number;
+  clipToEnd: "left" | "none" | "right";
+  horizontalInset: number;
+}
+
 export const SHARED_OASIS_LAYOUT = {
   centerXPercent: 50,
   centerYPercent: 42,
@@ -68,8 +74,7 @@ export function getMemberDockPosition(
       ? 50
       : count === 2
         ? SHARED_OASIS_LAYOUT.centerXPercent +
-          (index === 0 ? -1 : 1) *
-            SHARED_OASIS_LAYOUT.dockPairHalfSpreadPercent
+          (index === 0 ? -1 : 1) * SHARED_OASIS_LAYOUT.dockPairHalfSpreadPercent
         : SHARED_OASIS_LAYOUT.dockMinXPercent +
           (index / (count - 1)) *
             (SHARED_OASIS_LAYOUT.dockMaxXPercent -
@@ -79,6 +84,30 @@ export function getMemberDockPosition(
     xPercent: round(xPercent),
     yPercent: SHARED_OASIS_LAYOUT.dockYPercent,
     zIndex: SHARED_OASIS_LAYOUT.memberZIndex,
+  };
+}
+
+export function getWakeUpHintLayout(memberXPercent: number): WakeUpHintLayout {
+  if (memberXPercent <= 20) {
+    return {
+      anchorPositionByRatio: 0.35,
+      clipToEnd: "none",
+      horizontalInset: 12,
+    };
+  }
+
+  if (memberXPercent >= 80) {
+    return {
+      anchorPositionByRatio: 0.65,
+      clipToEnd: "none",
+      horizontalInset: -12,
+    };
+  }
+
+  return {
+    anchorPositionByRatio: 0.5,
+    clipToEnd: "none",
+    horizontalInset: 0,
   };
 }
 

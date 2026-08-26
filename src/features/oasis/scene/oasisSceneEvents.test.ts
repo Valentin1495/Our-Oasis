@@ -103,6 +103,45 @@ describe("diffOasisSceneSnapshots", () => {
     });
   });
 
+  it("분모가 바뀌어도 물방울이 늘면 기여 애니메이션으로 처리한다", () => {
+    const nextMembers = MEMBERS.map((member) =>
+      member.id === "me" ? { ...member, contributedDropsToday: 2 } : member,
+    );
+    expect(
+      diffOasisSceneSnapshots(
+        snapshot(2, MEMBERS, 4),
+        snapshot(3, nextMembers, 8),
+      ),
+    ).toMatchObject({
+      kind: "contribution",
+      origin: "local",
+      actorMemberId: "me",
+      dropsAdded: 1,
+    });
+  });
+
+  it("분모가 바뀌어도 첫 참여면 참여 연출로 처리한다", () => {
+    const beforeMembers = [
+      { ...MEMBERS[0], contributedDropsToday: 0, hasWaterRecordToday: false },
+      { ...MEMBERS[1], contributedDropsToday: 0, hasWaterRecordToday: false },
+    ];
+    const afterMembers = [
+      { ...beforeMembers[0], hasWaterRecordToday: true },
+      beforeMembers[1],
+    ];
+    expect(
+      diffOasisSceneSnapshots(
+        snapshot(0, beforeMembers, 0),
+        snapshot(0, afterMembers, 8),
+      ),
+    ).toMatchObject({
+      kind: "participation-only",
+      origin: "local",
+      actorMemberId: "me",
+      dropsAdded: 0,
+    });
+  });
+
   it("분모 변경과 감소 보정은 reconciliation으로 처리한다", () => {
     expect(
       diffOasisSceneSnapshots(snapshot(2), snapshot(2, MEMBERS, 12)),

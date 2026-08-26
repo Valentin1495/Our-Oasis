@@ -15,6 +15,7 @@ import {
   deriveOrganicProgress,
   getMemberDockPosition,
   getMeasuredWaterDropArc,
+  getWakeUpHintLayout,
   SHARED_OASIS_LAYOUT,
 } from "./sharedOasisSceneLayout";
 
@@ -72,7 +73,7 @@ function renderScene({
       impactIndex={impactIndex}
       isAnimating={isAnimating}
       isInteractionDisabled={isInteractionDisabled}
-      onGiveWater={() => undefined}
+      onWakeUpMember={() => undefined}
     />,
   );
 }
@@ -241,10 +242,28 @@ describe("멤버 도크", () => {
 
     expect(first.xPercent).toBeGreaterThan(SHARED_OASIS_LAYOUT.dockMinXPercent);
     expect(second.xPercent).toBeLessThan(SHARED_OASIS_LAYOUT.dockMaxXPercent);
-    expect(
-      SHARED_OASIS_LAYOUT.centerXPercent - first.xPercent,
-    ).toBeCloseTo(second.xPercent - SHARED_OASIS_LAYOUT.centerXPercent, 5);
+    expect(SHARED_OASIS_LAYOUT.centerXPercent - first.xPercent).toBeCloseTo(
+      second.xPercent - SHARED_OASIS_LAYOUT.centerXPercent,
+      5,
+    );
   });
+
+  it.each([
+    [
+      12,
+      { anchorPositionByRatio: 0.35, clipToEnd: "none", horizontalInset: 12 },
+    ],
+    [50, { anchorPositionByRatio: 0.5, clipToEnd: "none", horizontalInset: 0 }],
+    [
+      88,
+      { anchorPositionByRatio: 0.65, clipToEnd: "none", horizontalInset: -12 },
+    ],
+  ] as const)(
+    "가로 위치가 %s%%인 섬의 깨우기 툴팁을 화면 안쪽으로 배치한다",
+    (xPercent, expected) => {
+      expect(getWakeUpHintLayout(xPercent)).toEqual(expected);
+    },
+  );
 
   it("멤버별 0~4개 물방울 슬롯과 참여 상태를 렌더링한다", () => {
     const members = Array.from({ length: 5 }, (_, index) => ({
@@ -280,6 +299,45 @@ describe("멤버 도크", () => {
     expect(markup).toContain('data-member-status="participated"');
   });
 
+  it("첫 참여 연출에서도 내 섬에서 출발 파동을 보여준다", () => {
+    const beforeMembers = [
+      {
+        id: "me",
+        nickname: "지우",
+        contributedDropsToday: 0,
+        hasWaterRecordToday: false,
+      },
+    ];
+    const afterMembers = [{ ...beforeMembers[0], hasWaterRecordToday: true }];
+    const event = diffOasisSceneSnapshots(
+      createOasisSceneSnapshot({
+        totalDrops: 0,
+        maxDrops: 4,
+        members: beforeMembers,
+        currentMemberId: "me",
+      }),
+      createOasisSceneSnapshot({
+        totalDrops: 0,
+        maxDrops: 4,
+        members: afterMembers,
+        currentMemberId: "me",
+      }),
+    );
+    if (!event) throw new Error("참여 이벤트가 필요합니다.");
+
+    const markup = renderScene({
+      percent: 0,
+      members: [{ ...MEMBERS[0], drops: 0, hasWaterRecordToday: false }],
+      currentMemberId: "me",
+      event,
+      phase: "source",
+    });
+
+    expect(event.kind).toBe("participation-only");
+    expect(markup).toContain("shared-oasis-scene__member-source-ripple");
+    expect(markup).toContain("shared-oasis-scene__member--active");
+  });
+
   it("메인 오아시스와 각 멤버 섬을 같은 스티커 스타일로 표시한다", () => {
     const markup = renderScene({ percent: 50 });
 
@@ -288,20 +346,31 @@ describe("멤버 도크", () => {
     );
   });
 
-  it("현재 사용자를 표시하고 기여량과 행동을 접근성 이름에 포함한다", () => {
+  it("현재 사용자의 섬은 클릭할 수 없고, 다른 멤버의 섬은 깨우기 위해 클릭할 수 있다", () => {
     const markup = renderScene({
       percent: 50,
       currentMemberId: "me",
     });
 
     expect(markup).toContain('data-current-member="true"');
-    expect(markup).toContain(
-      "지우의 섬, 오늘 물방울 1개 기여. 물 한 잔 채우기",
-    );
     expect(markup).toContain("현재 사용자");
+    expect(markup).toContain("민수의 섬, 오늘 물방울을 모두 채웠어요");
   });
 
-  it("애니메이션 또는 기록 처리 중 현재 사용자 입력을 비활성화한다", () => {
+  it("아직 물방울을 다 채우지 않은 멤버의 섬은 깨우기 대상으로 안내한다", () => {
+    const markup = renderScene({
+      percent: 50,
+      currentMemberId: "me",
+      members: [
+        MEMBERS[0],
+        { ...MEMBERS[1], drops: 2, hasWaterRecordToday: true },
+      ],
+    });
+
+    expect(markup).toContain("민수의 섬, 오늘 물방울 2개 기여. 깨우기");
+  });
+
+  it("애니메이션 또는 처리 중에는 다른 멤버 섬 클릭을 비활성화한다", () => {
     expect(
       renderScene({
         percent: 50,
@@ -319,15 +388,64 @@ describe("멤버 도크", () => {
     ).toMatch(/<button[^>]*disabled=""/);
   });
 
-  it("기록 처리 중에는 물 한 잔 버튼과 동일하게 처리 중 상태를 안내한다", () => {
+  it("처리 중에는 다른 멤버 섬에 처리 중 상태를 안내한다", () => {
     const markup = renderScene({
       percent: 50,
       currentMemberId: "me",
       isInteractionDisabled: true,
     });
 
-    expect(markup).toContain("지우의 섬, 물 기록 처리 중");
-    expect(markup).not.toContain("물 한 잔 채우기");
+    expect(markup).toContain("민수의 섬, 처리 중");
+  });
+});
+
+describe("친구 깨우기 힌트", () => {
+  it("깨울 친구가 있고 힌트를 아직 배우지 않았다면 첫 대상 친구의 섬 위에 힌트를 보여준다", () => {
+    const markup = renderToStaticMarkup(
+      <SharedOasisScene
+        progressPercentage={50}
+        members={[
+          MEMBERS[0],
+          { ...MEMBERS[1], drops: 2, hasWaterRecordToday: true },
+        ]}
+        currentMemberId="me"
+        onWakeUpMember={() => undefined}
+        showWakeUpHint
+      />,
+    );
+
+    // TDS Tooltip은 말풍선 내용을 portal로 렌더링하므로 SSR 마크업에는 나타나지 않는다.
+    // 대신 열림 상태에서 트리거(아바타)에 추가되는 aria-describedby로 확인한다.
+    expect(markup).toContain(
+      'shared-oasis-scene__member-avatar" aria-describedby=',
+    );
+  });
+
+  it("이미 힌트를 배웠거나(showWakeUpHint=false) 깨울 대상이 없으면 힌트를 보여주지 않는다", () => {
+    const learnedMarkup = renderToStaticMarkup(
+      <SharedOasisScene
+        progressPercentage={50}
+        members={[
+          MEMBERS[0],
+          { ...MEMBERS[1], drops: 2, hasWaterRecordToday: true },
+        ]}
+        currentMemberId="me"
+        onWakeUpMember={() => undefined}
+        showWakeUpHint={false}
+      />,
+    );
+    expect(learnedMarkup).not.toContain("aria-describedby");
+
+    const allCompleteMarkup = renderToStaticMarkup(
+      <SharedOasisScene
+        progressPercentage={100}
+        members={MEMBERS}
+        currentMemberId="me"
+        onWakeUpMember={() => undefined}
+        showWakeUpHint
+      />,
+    );
+    expect(allCompleteMarkup).not.toContain("aria-describedby");
   });
 });
 

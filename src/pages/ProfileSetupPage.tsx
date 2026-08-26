@@ -12,7 +12,8 @@ export function ProfileSetupPage() {
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next') ?? 'create';
   const roomId = searchParams.get('roomId');
-  const { setProfile, repository, setCurrentRoom } = useOasisStore();
+  const { setProfile, repository, setCurrentRoom, rememberJoinedRoom } =
+    useOasisStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,13 @@ export function ProfileSetupPage() {
         );
         setCurrentRoom(room);
         setProfile(profile, memberId);
+        rememberJoinedRoom({
+          room,
+          memberId,
+          nickname: profile.nickname,
+          cupMl: profile.cupMl,
+          dailyGoalMl: profile.dailyGoalMl,
+        });
         navigate(`/oasis/${room.id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : '방 참여에 실패했어요.');

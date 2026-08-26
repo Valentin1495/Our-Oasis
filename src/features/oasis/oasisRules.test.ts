@@ -82,14 +82,14 @@ describe("getCompletionState", () => {
 
 describe("개인 물방울", () => {
   it.each([
-    [499, 0],
-    [500, 1],
-    [1000, 2],
-    [1500, 3],
-    [2000, 4],
-    [2500, 4],
-  ])("2000ml 목표에서 %sml는 %s개다", (consumedMl, drops) => {
-    expect(getContributionDrops(consumedMl, 2000)).toBe(drops);
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [4, 4],
+    [5, 4],
+  ])("오늘 %s잔이면 물방울 %s개다", (cupsLogged, drops) => {
+    expect(getContributionDrops(cupsLogged)).toBe(drops);
   });
 });
 

@@ -292,6 +292,7 @@
   pointer-events: none;
 }
 
+
 .shared-oasis-scene__member {
   position: absolute;
   top: var(--member-y);
@@ -455,6 +456,14 @@
     0 0 0 2px rgba(255, 252, 242, 0.9),
     0 3px 7px rgba(61, 40, 24, 0.18);
   transform: translateX(-50%);
+}
+
+.shared-oasis-scene__wake-up-tooltip--left svg {
+  translate: -12px 0;
+}
+
+.shared-oasis-scene__wake-up-tooltip--right svg {
+  translate: 12px 0;
 }
 
 .shared-oasis-scene__member[data-current-member="true"]

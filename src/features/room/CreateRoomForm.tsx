@@ -36,7 +36,7 @@ export function CreateRoomForm({ onSubmit, isSubmitting = false }: Props) {
       >
         <RuleItem icon="🗓️" text="기간: 7일" />
         <RuleItem icon="👥" text="최대 5명" />
-        <RuleItem icon="💧" text="각자 목표 달성률 25%, 50%, 75%, 100%마다 물방울 1개 기여" />
+        <RuleItem icon="💧" text="물 한 잔마다 물방울 1개, 하루 최대 4개" />
         <RuleItem icon="🌊" text="공동 달성률이 올라갈수록 오아시스가 자라요" />
       </div>
 

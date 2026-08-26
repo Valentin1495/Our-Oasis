@@ -110,30 +110,24 @@ README에는 “75%를 넘으면”이라고 쓰여 있지만 실제 코드는 �
 
 물 높이는 퍼센트로 연속 계산하지만 실제 ellipse의 `ry`가 약 4에서 11.2 사이로만 변해 시각적 차이가 작다. 0%에도 최소 크기의 ellipse가 남는다.
 
-### 1.6 물 기록 후 상태 변경 흐름
+### 1.6 물 기록 후 상태 변경 흐름 (갱신됨)
 
 현재 로컬 사용자의 한 컵 기록은 다음 순서다.
 
 ```text
 WaterLogButton 클릭
 → store.logWaterCup()
-→ Supabase RPC log_water_cup 또는 Mock pending log 생성
-→ 화면 상태는 아직 변경하지 않음
-→ pendingUndo 저장, TDS Toast 표시
-→ 5초 후 store.confirmPendingUndo()
-→ confirm_water_cup RPC로 확정
-→ pendingUndo 제거
+→ Supabase RPC log_water_cup으로 즉시 확정
 → loadOasisState()로 전체 상태 재조회
-→ 새 oasisState가 먼저 렌더링됨
-→ 그 후 dropAnimationTick 또는 personalRecordAnimationTick 증가
-→ 물방울/피드백 애니메이션 실행
+→ 5초 되돌리기 창(undoWindow) 오픈, UndoBanner 표시
+→ oasisSceneEvents가 이전/이후 스냅샷을 diff해 contribution/participation 이벤트 생성
+→ actorMemberId 기준으로 origin(local/remote/aggregate/system) 판정
+→ SharedOasisScene이 물방울 이동 → 임팩트 애니메이션 순서로 재생
 ```
 
-따라서 장면과 진행률이 먼저 바뀌고 물방울이 나중에 떨어진다. 현재 제품 목표에 필요한 인과 순서와 반대다.
+되돌리기(`undoWaterCup`)는 확정 후 5초(서버는 10초까지 허용) 이내에만 가능하며, `undo_confirmed_water_cup` RPC로 롤백한다. 예전 버전에 있던 "먼저 대기(pending) → 5초 후 확정" 2단계 흐름은 더 이상 존재하지 않는다.
 
-다른 멤버의 확정 기록은 `room_members` 또는 `day_records`의 Postgres Changes를 받아 전체 상태를 다시 조회한다. 이때 의미 있는 이벤트나 기여자 정보 없이 장면이 즉시 바뀐다. 두 테이블이 한 번의 확정으로 각각 변경되면 중복 재조회도 발생할 수 있다.
-
-내 `pendingUndo`가 있는 동안에는 모든 관련 실시간 갱신을 무시한다. 확정 후 전체 재조회로 따라잡지만, 그 사이 발생한 친구의 행동을 개별 이벤트로 보여줄 수 없다.
+다른 멤버의 확정 기록은 `room_members`/`day_records`의 Postgres Changes를 받아 `loadOasisState()`로 재조회한다. `oasisSceneEvents.ts`가 재조회 전후 스냅샷을 비교해 누가(actor) 무엇을 했는지 판별하므로, 완전히 "이벤트 정보 없이 장면만 바뀌는" 문제는 해소됐다. 다만 두 테이블이 한 번의 확정으로 각각 변경되면 중복 재조회가 발생할 수 있는 점은 남아 있다.
 
 ### 1.7 멤버 참여 표현
 
