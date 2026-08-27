@@ -96,6 +96,27 @@ export function getWeeklyRewards(history: DayRecord[]) {
   };
 }
 
+export type PendingRewardScene =
+  | "rare-final-oasis"
+  | "special-character"
+  | "rare-final-oasis-with-special-character";
+
+/** 아직 연출이 준비되지 않은 최종 보상 장면의 조합을 결정한다. */
+export function getPendingRewardScene({
+  isRareFinalOasisUnlocked,
+  isSpecialCharacterSettled,
+}: {
+  isRareFinalOasisUnlocked: boolean;
+  isSpecialCharacterSettled: boolean;
+}): PendingRewardScene | null {
+  if (isRareFinalOasisUnlocked && isSpecialCharacterSettled) {
+    return "rare-final-oasis-with-special-character";
+  }
+  if (isRareFinalOasisUnlocked) return "rare-final-oasis";
+  if (isSpecialCharacterSettled) return "special-character";
+  return null;
+}
+
 export function getOasisAchievements(state: OasisState) {
   const today = state.history.find(
     (day) => day.dayIndex === state.room.dayIndex,

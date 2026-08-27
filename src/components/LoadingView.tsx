@@ -1,15 +1,26 @@
-import { Skeleton } from '@toss/tds-mobile';
+import { Loader, type LoaderProps } from "@toss/tds-mobile";
 
 interface Props {
-  rows?: number;
+  label?: string;
+  type?: LoaderProps["type"];
 }
 
-export function LoadingView({ rows = 4 }: Props) {
+export function LoadingView({
+  label = "불러오는 중...",
+  type = "primary",
+}: Props) {
   return (
-    <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {Array.from({ length: rows }).map((_, i) => (
-        <Skeleton key={i} pattern="subtitleList" />
-      ))}
+    <div
+      style={{
+        display: "flex",
+        minHeight: "240px",
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 20px",
+      }}
+    >
+      <Loader size="large" type={type} label={label} />
     </div>
   );
 }

@@ -108,7 +108,20 @@ export const useOasisStore = create<OasisStore>()(
       },
 
       setCurrentRoom(room) {
-        set({ currentRoom: room });
+        set((state) => {
+          if (state.oasisState?.room.id === room.id) {
+            return { currentRoom: room };
+          }
+
+          // 다른 방으로 이동할 때 직전 방의 장면이 새 방의 첫 화면으로
+          // 잠깐 노출되지 않도록, 방 선택과 함께 방 전용 상태를 비운다.
+          return {
+            currentRoom: room,
+            oasisState: null,
+            oasisError: null,
+            isLoadingOasis: false,
+          };
+        });
       },
 
       rememberJoinedRoom(summary) {
@@ -300,9 +313,9 @@ export const useOasisStore = create<OasisStore>()(
             consumedMl: result.newConsumedMl,
             goalMl,
             warning: isRapidIncrease
-              ? "짧은 시간에 많은 양이 기록됐어요. 실제로 마신 양인지 확인해 주세요."
+              ? "연속해서 기록했어요.\n섭취량을 확인해 주세요."
               : goalMl > 0 && result.newConsumedMl >= goalMl * 1.5
-                ? "오늘 목표를 많이 넘겼어요. 실제로 마신 양인지 확인해 주세요."
+                ? "오늘 목표를 넘겼어요.\n섭취량을 확인해 주세요."
                 : null,
           };
 

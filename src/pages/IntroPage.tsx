@@ -16,7 +16,6 @@ export function IntroPage() {
     rememberJoinedRoom,
     joinedRooms,
   } = useOasisStore();
-  const [isSeeding, setIsSeeding] = useState(false);
   // 이 기기에 남아 있는 참여 기록을 먼저 보여주고, 서버 조회가 끝나면
   // 최신 정보로 병합한다. 익명 식별키 조회가 실패하거나(브라우저 미리보기,
   // 구버전 SDK 등) 네트워크가 느려도 목록 자체는 항상 보일 수 있게 한다.
@@ -73,50 +72,13 @@ export function IntroPage() {
     navigate(`/oasis/${room.room.id}`);
   }
 
-  // 데모용: 실제 방을 하나 만들어 바로 오아시스로 입장한다.
-  async function handleDemo() {
-    if (isSeeding) return;
-    setIsSeeding(true);
-    try {
-      const demoProfile = {
-        id: "",
-        nickname: "하늘",
-        cupMl: 250,
-        dailyGoalMl: 2000,
-      };
-      const tossAnonymousKey = await getAnonymousUserKey();
-      const { room, memberId } = await repository.createRoom({
-        name: "우리 팀 오아시스",
-        profile: demoProfile,
-        tossAnonymousKey,
-      });
-      setCurrentRoom(room);
-      setProfile({ ...demoProfile, id: memberId }, memberId);
-      rememberJoinedRoom({
-        room,
-        memberId,
-        nickname: demoProfile.nickname,
-        cupMl: demoProfile.cupMl,
-        dailyGoalMl: demoProfile.dailyGoalMl,
-      });
-      // 데모 느낌을 주기 위해 물 두 컵을 먼저 기록해 둔다.
-      await repository.logWaterCup(room.id, memberId);
-      await repository.logWaterCup(room.id, memberId);
-      navigate(`/oasis/${room.id}`);
-    } catch {
-      // 데모 진입 실패는 조용히 무시한다 (개발/테스트용 버튼이므로).
-    } finally {
-      setIsSeeding(false);
-    }
-  }
-
   const hasMyRooms = myRooms.length > 0;
 
   return (
     <ScreenContainer>
       {/* 헤더 영역 */}
       {isLoadingRooms ? (
-        <LoadingView rows={2} />
+        <LoadingView label="참여 중인 오아시스를 불러오는 중..." />
       ) : hasMyRooms ? (
         <div
           style={{
@@ -241,11 +203,9 @@ export function IntroPage() {
               margin: 0,
             }}
           >
-            공동 달성률 75% 이상으로 하루를 완성하고,
+            매일 마신 물을 기록하면,
             <br />
-            7일 중 5일을 함께 채워 최종 오아시스를 만들어요.
-            <br />
-            모두 참여한 날엔 특별한 친구도 찾아와요.
+            친구들과 함께 오아시스가 자라나요.
           </p>
         </div>
       )}
@@ -266,7 +226,7 @@ export function IntroPage() {
           aria-label="오아시스 방 만들기"
           style={{ width: "100%" }}
         >
-          오아시스 만들기
+          오아시스 생성하기
         </Button>
 
         <Button
@@ -276,27 +236,8 @@ export function IntroPage() {
           aria-label="초대받은 오아시스 방에 참여하기"
           style={{ width: "100%" }}
         >
-          초대받은 방 참여하기
+          오아시스 참여하기
         </Button>
-
-        {/* 데모 버튼 (개발/테스트용) */}
-        <button
-          type="button"
-          onClick={handleDemo}
-          disabled={isSeeding}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--color-label-assistive)",
-            fontSize: "13px",
-            cursor: isSeeding ? "not-allowed" : "pointer",
-            padding: "8px",
-            marginTop: "4px",
-          }}
-          aria-label="데모 방으로 바로 입장 (테스트용)"
-        >
-          {isSeeding ? "방 만드는 중..." : "데모 보기"}
-        </button>
       </div>
     </ScreenContainer>
   );

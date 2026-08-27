@@ -21,47 +21,59 @@
   transform: translateX(-50%);
 }
 
-.feedback {
+.summary {
   display: flex;
-  align-items: flex-start;
+  min-height: 30px;
+  align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border: 1px solid rgba(45, 153, 143, 0.18);
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid rgba(99, 67, 42, 0.16);
   border-radius: 999px;
-  background: rgba(255, 250, 236, 0.88);
-  box-shadow: 0 3px 10px rgba(83, 55, 31, 0.08);
-  color: #208e87;
+  background: rgba(255, 246, 222, 0.82);
+  box-shadow:
+    0 3px 10px rgba(83, 55, 31, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+  color: #4f3826;
   font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
-  animation: water-feedback-in 0.2s ease;
+  line-height: 1.35;
+  white-space: nowrap;
   backdrop-filter: blur(6px);
 }
 
-.warning {
-  margin-top: 2px;
-  color: #736457;
-  font-size: 11px;
-  font-weight: 500;
+.summaryItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
 }
 
-.summary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: #795f48;
+.summaryLabel {
+  color: #6c513c;
   font-size: 11px;
-  font-weight: 600;
-  line-height: 1.5;
-  text-shadow: 0 1px 1px rgba(255, 248, 224, 0.82);
-  white-space: nowrap;
+  font-weight: 700;
+}
+
+.summaryValue {
+  color: #3f2b1d;
+  font-weight: 850;
+}
+
+.summaryGoal {
+  color: #6c5949;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.summaryDivider {
+  width: 1px;
+  height: 13px;
+  flex: none;
+  background: rgba(92, 64, 42, 0.22);
 }
 
 .summaryComplete {
-  color: #187f78;
-  font-weight: 800;
+  color: #0b706a;
+  font-weight: 900;
 }
 
 .springButton {
@@ -198,18 +210,6 @@
   animation: spring-wait 1.1s ease-in-out infinite;
 }
 
-@keyframes water-feedback-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes spring-wait {
   50% {
     opacity: 0.48;
@@ -218,7 +218,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feedback,
   .springRim,
   .springWater {
     transition: none;

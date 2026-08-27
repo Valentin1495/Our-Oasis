@@ -6,14 +6,12 @@ import {
   didAllEligibleMembersParticipate,
   getCompletionState,
   getOasisStage,
+  getPendingRewardScene,
   getWeeklyRewards,
   isDailyOasisComplete,
 } from "./oasisRules";
 
-function day(
-  dayIndex: number,
-  overrides: Partial<DayRecord> = {},
-): DayRecord {
+function day(dayIndex: number, overrides: Partial<DayRecord> = {}): DayRecord {
   return {
     roomId: "room",
     dayIndex,
@@ -115,17 +113,19 @@ describe("전원 참여", () => {
 
   it("물방울 획득 여부와 관계없이 확정된 첫 기록을 참여로 센다", () => {
     expect(
-      didAllEligibleMembersParticipate(["a"], [
-        { memberId: "a", confirmed: true },
-      ]),
+      didAllEligibleMembersParticipate(
+        ["a"],
+        [{ memberId: "a", confirmed: true }],
+      ),
     ).toBe(true);
   });
 
   it("취소된 기록만 있으면 참여로 세지 않는다", () => {
     expect(
-      didAllEligibleMembersParticipate(["a"], [
-        { memberId: "a", confirmed: false },
-      ]),
+      didAllEligibleMembersParticipate(
+        ["a"],
+        [{ memberId: "a", confirmed: false }],
+      ),
     ).toBe(false);
   });
 });
@@ -153,4 +153,21 @@ describe("주간 보상", () => {
     }));
     expect(getWeeklyRewards(sevenDays).isRareFinalOasisUnlocked).toBe(true);
   });
+
+  it.each([
+    [true, false, "rare-final-oasis"],
+    [false, true, "special-character"],
+    [true, true, "rare-final-oasis-with-special-character"],
+    [false, false, null],
+  ] as const)(
+    "희귀 오아시스 %s, 특별 캐릭터 %s 조합의 보류 장면을 구분한다",
+    (isRareFinalOasisUnlocked, isSpecialCharacterSettled, expected) => {
+      expect(
+        getPendingRewardScene({
+          isRareFinalOasisUnlocked,
+          isSpecialCharacterSettled,
+        }),
+      ).toBe(expected);
+    },
+  );
 });

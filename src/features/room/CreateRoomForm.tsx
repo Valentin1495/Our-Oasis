@@ -34,10 +34,17 @@ export function CreateRoomForm({ onSubmit, isSubmitting = false }: Props) {
           gap: '8px',
         }}
       >
-        <RuleItem icon="🗓️" text="기간: 7일" />
+        <RuleItem icon="🗓️" text="친구들과 7일 동안 함께해요" />
         <RuleItem icon="👥" text="최대 5명" />
         <RuleItem icon="💧" text="물 한 잔마다 물방울 1개, 하루 최대 4개" />
-        <RuleItem icon="🌊" text="공동 달성률이 올라갈수록 오아시스가 자라요" />
+        <RuleItem
+          icon="🌱"
+          text="물방울 75%면 오늘 완성, 100%면 완벽 달성이에요"
+        />
+        <RuleItem
+          icon="🏝️"
+          text="7일 중 5일을 완성하면 최종 오아시스를 얻어요"
+        />
       </div>
 
       <Button

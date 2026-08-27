@@ -39,7 +39,7 @@ export function deriveOasisProgressMessage({
       headline: "오늘의 오아시스를 완성했어요",
       detail:
         safeMaxDrops > 0
-          ? `완벽 달성까지 물 ${remainingDrops}잔 남았어요`
+          ? `완벽 달성(100%)까지 물 ${remainingDrops}잔 남았어요`
           : null,
       remainingDrops,
     };
@@ -51,7 +51,7 @@ export function deriveOasisProgressMessage({
       headline: "친구들의 물이 모이고 있어요",
       detail:
         safeMaxDrops > 0
-          ? `완성까지 물 ${remainingDrops}잔 남았어요`
+          ? `오늘 완성(75%)까지 물 ${remainingDrops}잔 남았어요`
           : null,
       remainingDrops,
     };
@@ -59,7 +59,7 @@ export function deriveOasisProgressMessage({
 
   return {
     headline: "첫 물 한 잔을 기다리고 있어요",
-    detail: null,
+    detail: "75%부터 오늘의 오아시스가 완성돼요",
     remainingDrops: successTarget,
   };
 }

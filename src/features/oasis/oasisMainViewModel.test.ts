@@ -16,7 +16,7 @@ describe("deriveOasisProgressMessage", () => {
       }),
     ).toMatchObject({
       headline: "첫 물 한 잔을 기다리고 있어요",
-      detail: null,
+      detail: "75%부터 오늘의 오아시스가 완성돼요",
       remainingDrops: 15,
     });
   });
@@ -30,7 +30,7 @@ describe("deriveOasisProgressMessage", () => {
       }),
     ).toMatchObject({
       headline: "친구들의 물이 모이고 있어요",
-      detail: "완성까지 물 3잔 남았어요",
+      detail: "오늘 완성(75%)까지 물 3잔 남았어요",
       remainingDrops: 3,
     });
   });
@@ -44,7 +44,7 @@ describe("deriveOasisProgressMessage", () => {
       }),
     ).toMatchObject({
       headline: "오늘의 오아시스를 완성했어요",
-      detail: "완벽 달성까지 물 5잔 남았어요",
+      detail: "완벽 달성(100%)까지 물 5잔 남았어요",
       remainingDrops: 5,
     });
   });

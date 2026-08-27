@@ -7,7 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Toast, ConfirmDialog } from "@toss/tds-mobile";
+import { ConfirmDialog, IconButton, Toast } from "@toss/tds-mobile";
 import {
   EmptyState,
   InlineError,
@@ -39,6 +39,9 @@ type InviteStatus = "idle" | "copying" | "copied" | "error";
 type WakeUpStatus = "idle" | "sending" | "shared" | "copied" | "failed";
 
 const WAKE_UP_HINT_STORAGE_KEY = "oasis:wake-up-hint-learned";
+const SHOW_OASIS_DEBUG_PANEL =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ENABLE_OASIS_DEBUG === "true";
 
 const oasisPageStyle: CSSProperties = {
   height: "100dvh",
@@ -52,7 +55,7 @@ export function OasisMainPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const {
-    oasisState,
+    oasisState: storedOasisState,
     isLoadingOasis,
     oasisError,
     memberId,
@@ -64,6 +67,12 @@ export function OasisMainPage() {
     unsubscribeFromRoom,
     forgetJoinedRoom,
   } = useOasisStore();
+
+  // 라우트가 바뀐 직후에는 스토어에 직전 방의 상태가 남아 있을 수 있다.
+  // 현재 URL의 방과 일치하는 상태만 장면에 전달해야 이전 오아시스가 먼저
+  // 보였다가 새 방의 초기 상태로 되돌아가는 전환이 생기지 않는다.
+  const oasisState =
+    storedOasisState?.room.id === roomId ? storedOasisState : null;
 
   const [showDayResult, setShowDayResult] = useState(false);
   const [bottomCTAHeight, setBottomCTAHeight] = useState(112);
@@ -192,10 +201,10 @@ export function OasisMainPage() {
 
   // 로딩/에러 상태도 오아시스 화면과 같은 배경을 사용해, 로딩이 끝나고
   // 장면이 나타날 때 흰 화면 → 모래빛 배경으로 바뀌는 깜빡임을 없앤다.
-  if (isLoadingOasis && !oasisState) {
+  if (!oasisState && (isLoadingOasis || !oasisError)) {
     return (
       <ScreenContainer className={styles.page} style={oasisPageStyle}>
-        <LoadingView rows={5} />
+        <LoadingView type="dark" label="오아시스를 불러오는 중..." />
       </ScreenContainer>
     );
   }
@@ -226,7 +235,6 @@ export function OasisMainPage() {
   if (!targetSceneSnapshot) return null;
 
   const { room, members, sharedProgressPercent } = oasisState;
-  const daysLeft = Math.max(0, room.durationDays - room.dayIndex);
   const displayedSceneSnapshot =
     sceneController.displayedSnapshot ?? targetSceneSnapshot;
   const displayedScenePercent = displayedSceneSnapshot.progress.displayPercent;
@@ -499,41 +507,37 @@ export function OasisMainPage() {
       <span className={styles.statusLight} aria-hidden="true" />
 
       <header className={styles.header}>
-        <button
+        <IconButton
           type="button"
           className={styles.homeButton}
+          name="icon-home-mono"
+          variant="fill"
+          iconSize={21}
+          color="#704b2c"
+          bgColor="rgba(255, 233, 190, 0.68)"
           aria-label="참여 중인 오아시스 목록으로 이동"
           onClick={() => navigate("/")}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8Z" />
-          </svg>
-        </button>
+        />
 
         <div className={styles.headerCopy}>
           <h1 className={styles.title}>{room.name}</h1>
-          <div className={styles.subtitleRow}>
-            <p className={styles.subtitle}>우리들의 오아시스</p>
-            {memberId && (
-              <button
-                type="button"
-                className={styles.leaveButton}
-                onClick={() => setLeaveDialogOpen(true)}
-                disabled={isLeaving}
-                aria-label="이 오아시스에서 나가기"
-              >
-                나가기
-              </button>
-            )}
-          </div>
+          <p className={styles.subtitle}>우리들의 오아시스</p>
         </div>
 
-        <span
-          className={styles.dayBadge}
-          aria-label={`챌린지 ${daysLeft}일 남음`}
-        >
-          D-{daysLeft}
-        </span>
+        {memberId && (
+          <IconButton
+            type="button"
+            className={styles.leaveButton}
+            name="icon-x-circle-mono"
+            variant="fill"
+            iconSize={21}
+            color="#7a4b2c"
+            bgColor="rgba(255, 233, 190, 0.68)"
+            aria-label="이 오아시스에서 나가기"
+            onClick={() => setLeaveDialogOpen(true)}
+            disabled={isLeaving}
+          />
+        )}
       </header>
 
       <section className={styles.progressStatus} aria-live="polite">
@@ -723,7 +727,7 @@ export function OasisMainPage() {
         closeOnDimmerClick={!isLeaving}
       />
 
-      {/* {import.meta.env.DEV && (
+      {SHOW_OASIS_DEBUG_PANEL && (
         <OasisDebugPanel
           actualPercent={sharedProgressPercent}
           previewPercent={scenePreviewPercent}
@@ -738,7 +742,7 @@ export function OasisMainPage() {
           onReducedMotionChange={setScenePreviewReducedMotion}
           onExitPreview={exitScenePreview}
         />
-      )} */}
+      )}
     </ScreenContainer>
   );
 }

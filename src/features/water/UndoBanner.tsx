@@ -6,13 +6,14 @@ interface Props {
 }
 
 export function UndoBanner({ bottomOffset }: Props) {
-  const { undoWindow, undoWaterCup } = useOasisStore();
+  const { undoWindow, undoWaterCup, waterLogFeedback } = useOasisStore();
+  const text = waterLogFeedback?.warning ?? "물 한 컵을 기록했어요";
 
   return (
     <Toast
       position="bottom"
       open={undoWindow !== null}
-      text="물 한 컵을 기록했어요"
+      text={text}
       button={
         <Toast.Button onClick={undoWaterCup} aria-label="물 기록 실행 취소">
           실행 취소
@@ -22,6 +23,7 @@ export function UndoBanner({ bottomOffset }: Props) {
       aria-live="polite"
       style={{
         bottom: `${bottomOffset}px`,
+        whiteSpace: waterLogFeedback?.warning ? "pre-line" : undefined,
       }}
     />
   );

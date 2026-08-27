@@ -1,6 +1,11 @@
 import { BottomSheet } from "@toss/tds-mobile";
 import type { OasisState } from "../../../types";
-import { WEEKLY_OASIS_TARGET_DAYS, getOasisAchievements } from "../oasisRules";
+import {
+  WEEKLY_OASIS_TARGET_DAYS,
+  getOasisAchievements,
+  getPendingRewardScene,
+} from "../oasisRules";
+import { PendingRewardSceneNotice } from "./PendingRewardSceneNotice";
 
 interface Props {
   open: boolean;
@@ -28,6 +33,10 @@ export function DayResultModal({
     isRareFinalOasisUnlocked,
     isSpecialCharacterSettled,
   } = getOasisAchievements(oasisState);
+  const pendingRewardScene = getPendingRewardScene({
+    isRareFinalOasisUnlocked,
+    isSpecialCharacterSettled,
+  });
 
   return (
     <BottomSheet
@@ -35,6 +44,7 @@ export function DayResultModal({
       aria-label="오늘 하루 결과"
       header={<BottomSheet.Header>오늘 하루 결과</BottomSheet.Header>}
       cta={<BottomSheet.CTA onClick={onClose}>확인</BottomSheet.CTA>}
+      ctaContentGap={16}
       maxHeight="85vh"
       expandedMaxHeight="100vh"
       expandBottomSheet
@@ -46,7 +56,7 @@ export function DayResultModal({
           padding: "0 24px",
           display: "flex",
           flexDirection: "column",
-          gap: "20px",
+          gap: "12px",
         }}
       >
         <div
@@ -100,9 +110,21 @@ export function DayResultModal({
           )}
         </div>
 
-        {(allMembersParticipatedToday ||
-          isFinalOasisUnlocked ||
-          isSpecialCharacterSettled) && (
+        <p
+          style={{
+            margin: "-4px 0 0",
+            fontSize: "13px",
+            lineHeight: 1.55,
+            color: "var(--color-label-alternative)",
+            textAlign: "center",
+          }}
+        >
+          75% 이상인 날은 주간 완성에 쌓여요.
+          <br />
+          100%를 채우면 완벽 달성 별 조각을 받아요.
+        </p>
+
+        {(allMembersParticipatedToday || isFinalOasisUnlocked) && (
           <p
             style={{
               margin: 0,
@@ -112,14 +134,14 @@ export function DayResultModal({
               textAlign: "center",
             }}
           >
-            {isRareFinalOasisUnlocked
-              ? "✨ 7일 모두 완성해 희귀 오아시스를 얻었어요!"
-              : isSpecialCharacterSettled
-                ? "💧 모두의 물방울 배지를 얻었어요!"
-                : isFinalOasisUnlocked
-                  ? "🎉 최종 오아시스를 얻었어요!"
+            {isFinalOasisUnlocked
+              ? "🎉 최종 오아시스를 얻었어요!"
               : "💧 모든 팀원이 함께 채웠어요!"}
           </p>
+        )}
+
+        {pendingRewardScene && (
+          <PendingRewardSceneNotice scene={pendingRewardScene} />
         )}
 
         <button

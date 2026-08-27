@@ -152,6 +152,31 @@ describe("useOasisStore", () => {
     });
   });
 
+  describe("setCurrentRoom", () => {
+    it("다른 방을 선택하면 이전 방의 오아시스 상태를 즉시 비운다", () => {
+      const nextRoom = { ...room, id: "room-2", name: "새 오아시스" };
+      useOasisStore.setState({
+        oasisState: makeOasisState({ totalDrops: 4 }),
+        oasisError: "이전 오류",
+      });
+
+      useOasisStore.getState().setCurrentRoom(nextRoom);
+
+      expect(useOasisStore.getState().currentRoom).toEqual(nextRoom);
+      expect(useOasisStore.getState().oasisState).toBeNull();
+      expect(useOasisStore.getState().oasisError).toBeNull();
+    });
+
+    it("같은 방을 다시 선택하면 현재 오아시스 상태를 유지한다", () => {
+      const currentOasisState = makeOasisState({ totalDrops: 2 });
+      useOasisStore.setState({ oasisState: currentOasisState });
+
+      useOasisStore.getState().setCurrentRoom(room);
+
+      expect(useOasisStore.getState().oasisState).toBe(currentOasisState);
+    });
+  });
+
   describe("loadOasisState", () => {
     it("먼저 시작했지만 늦게 도착한 응답으로 나중 요청 결과를 덮어쓰지 않는다", async () => {
       const first = deferred<OasisState>();

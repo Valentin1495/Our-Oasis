@@ -9,7 +9,9 @@ import {
 } from "../components";
 import { useOasisStore } from "../lib/store/useOasisStore";
 import {
+  PendingRewardSceneNotice,
   WEEKLY_OASIS_TARGET_DAYS,
+  getPendingRewardScene,
   getWeeklyRewards,
 } from "../features/oasis";
 
@@ -26,7 +28,9 @@ export function WeeklyHistoryPage() {
 
   if (!roomId) return null;
 
-  if (isLoadingOasis && !oasisState) return <LoadingView rows={7} />;
+  if (isLoadingOasis && !oasisState) {
+    return <LoadingView label="7일 기록을 불러오는 중..." />;
+  }
 
   if (oasisError && !oasisState) {
     return (
@@ -56,6 +60,10 @@ export function WeeklyHistoryPage() {
     isRareFinalOasisUnlocked,
     isSpecialCharacterSettled,
   } = getWeeklyRewards(history);
+  const pendingRewardScene = getPendingRewardScene({
+    isRareFinalOasisUnlocked,
+    isSpecialCharacterSettled,
+  });
 
   return (
     <ScreenContainer>
@@ -89,10 +97,10 @@ export function WeeklyHistoryPage() {
             }}
           >
             {isRareFinalOasisUnlocked
-              ? "✨ 희귀 최종 오아시스를 얻었어요"
+              ? "✨ 7일 모두 오아시스를 완성했어요"
               : isFinalOasisUnlocked
                 ? "🎉 최종 오아시스를 얻었어요"
-              : `최종 오아시스까지 ${completedDays}/${WEEKLY_OASIS_TARGET_DAYS}일`}
+                : `최종 오아시스까지 ${completedDays}/${WEEKLY_OASIS_TARGET_DAYS}일`}
           </p>
           <p
             style={{
@@ -112,9 +120,13 @@ export function WeeklyHistoryPage() {
           >
             100% 별 {fullCompleteStarCount}개 · 전원 참여 별{" "}
             {allParticipatedStarCount}개
-            {isSpecialCharacterSettled && " · 특별 캐릭터 정착"}
           </p>
         </div>
+        {pendingRewardScene && (
+          <div style={{ marginTop: "12px" }}>
+            <PendingRewardSceneNotice scene={pendingRewardScene} />
+          </div>
+        )}
       </div>
 
       <div

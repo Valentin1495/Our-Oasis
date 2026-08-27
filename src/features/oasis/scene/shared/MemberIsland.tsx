@@ -83,7 +83,7 @@ export function MemberIsland({
           data-water-origin-side={waterOriginSide}
         />
         <Tooltip
-          message="눌러서 깨워봐요"
+          message="눌러서 깨워봐요!"
           open={showWakeUpHint}
           className={
             wakeUpHintLayout.horizontalInset > 0
