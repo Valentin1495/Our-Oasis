@@ -76,6 +76,7 @@ export function JoinRoomPage() {
       <JoinRoomForm
         initialRoomId={initialRoomId}
         onSubmit={handleJoin}
+        onInputChange={() => setError(null)}
         isSubmitting={isSubmitting}
         error={error}
       />

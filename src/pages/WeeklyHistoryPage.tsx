@@ -9,10 +9,8 @@ import {
 } from "../components";
 import { useOasisStore } from "../lib/store/useOasisStore";
 import {
-  PendingRewardSceneNotice,
   WEEKLY_OASIS_TARGET_DAYS,
-  getPendingRewardScene,
-  getWeeklyRewards,
+  getWeeklyProgress,
 } from "../features/oasis";
 
 export function WeeklyHistoryPage() {
@@ -54,16 +52,11 @@ export function WeeklyHistoryPage() {
   const { history, room } = oasisState;
   const {
     completedDays,
-    fullCompleteStarCount,
-    allParticipatedStarCount,
-    isFinalOasisUnlocked,
-    isRareFinalOasisUnlocked,
-    isSpecialCharacterSettled,
-  } = getWeeklyRewards(history);
-  const pendingRewardScene = getPendingRewardScene({
-    isRareFinalOasisUnlocked,
-    isSpecialCharacterSettled,
-  });
+    fullCompleteDays,
+    allParticipatedDays,
+    isWeeklyGoalComplete,
+    areAllSevenDaysComplete,
+  } = getWeeklyProgress(history);
 
   return (
     <ScreenContainer>
@@ -81,12 +74,12 @@ export function WeeklyHistoryPage() {
           style={{
             padding: "16px",
             borderRadius: "14px",
-            backgroundColor: isFinalOasisUnlocked
+            backgroundColor: isWeeklyGoalComplete
               ? "var(--oasis-mint-100)"
               : "var(--color-surface)",
-            border: `1px solid ${isFinalOasisUnlocked ? "var(--oasis-mint-300)" : "var(--color-border)"}`,
+            border: `1px solid ${isWeeklyGoalComplete ? "var(--oasis-mint-300)" : "var(--color-border)"}`,
           }}
-          aria-label={`최종 오아시스까지 ${completedDays}일 완성, 목표 ${WEEKLY_OASIS_TARGET_DAYS}일`}
+          aria-label={`주간 공동 목표 ${completedDays}일 완성, 목표 ${WEEKLY_OASIS_TARGET_DAYS}일`}
         >
           <p
             style={{
@@ -96,11 +89,11 @@ export function WeeklyHistoryPage() {
               color: "var(--color-label-normal)",
             }}
           >
-            {isRareFinalOasisUnlocked
+            {areAllSevenDaysComplete
               ? "✨ 7일 모두 오아시스를 완성했어요"
-              : isFinalOasisUnlocked
-                ? "🎉 최종 오아시스를 얻었어요"
-                : `최종 오아시스까지 ${completedDays}/${WEEKLY_OASIS_TARGET_DAYS}일`}
+              : isWeeklyGoalComplete
+                ? "🎉 5일 공동 목표를 달성했어요"
+                : `이번 주 공동 목표 ${completedDays}/${WEEKLY_OASIS_TARGET_DAYS}일`}
           </p>
           <p
             style={{
@@ -109,7 +102,7 @@ export function WeeklyHistoryPage() {
               color: "var(--color-label-assistive)",
             }}
           >
-            7일 중 공동 달성률 75% 이상인 5일을 완성해요.
+            하루 물방울을 75% 이상 채우면 1일 완성이에요.
           </p>
           <p
             style={{
@@ -118,15 +111,10 @@ export function WeeklyHistoryPage() {
               color: "var(--color-label-alternative)",
             }}
           >
-            100% 별 {fullCompleteStarCount}개 · 전원 참여 별{" "}
-            {allParticipatedStarCount}개
+            100% 완벽 달성 {fullCompleteDays}일 · 전원 참여{" "}
+            {allParticipatedDays}일
           </p>
         </div>
-        {pendingRewardScene && (
-          <div style={{ marginTop: "12px" }}>
-            <PendingRewardSceneNotice scene={pendingRewardScene} />
-          </div>
-        )}
       </div>
 
       <div
@@ -222,8 +210,8 @@ export function WeeklyHistoryPage() {
                     }}
                   >
                     물방울 {day.totalDrops}개
-                    {day.isFullComplete && " · 100% 별 조각"}
-                    {day.allParticipated && " · 전원 참여 별 조각"}
+                    {day.isFullComplete && " · 100% 완벽 달성"}
+                    {day.allParticipated && " · 전원 참여"}
                   </p>
                 </>
               )}

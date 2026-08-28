@@ -6,8 +6,7 @@ import {
   didAllEligibleMembersParticipate,
   getCompletionState,
   getOasisStage,
-  getPendingRewardScene,
-  getWeeklyRewards,
+  getWeeklyProgress,
   isDailyOasisComplete,
 } from "./oasisRules";
 
@@ -130,8 +129,8 @@ describe("전원 참여", () => {
   });
 });
 
-describe("주간 보상", () => {
-  it("완성 5일, 완성 7일, 전원 참여 5일을 각각 계산한다", () => {
+describe("주간 공동 목표", () => {
+  it("5일 공동 목표와 7일 전체 완성을 각각 계산한다", () => {
     const fiveDays = Array.from({ length: 7 }, (_, index) =>
       day(index + 1, {
         isComplete: index < 5,
@@ -139,35 +138,18 @@ describe("주간 보상", () => {
         allParticipated: index < 5,
       }),
     );
-    expect(getWeeklyRewards(fiveDays)).toMatchObject({
-      isFinalOasisUnlocked: true,
-      isRareFinalOasisUnlocked: false,
-      isSpecialCharacterSettled: true,
-      fullCompleteStarCount: 2,
-      allParticipatedStarCount: 5,
+    expect(getWeeklyProgress(fiveDays)).toMatchObject({
+      completedDays: 5,
+      fullCompleteDays: 2,
+      allParticipatedDays: 5,
+      isWeeklyGoalComplete: true,
+      areAllSevenDaysComplete: false,
     });
 
     const sevenDays = fiveDays.map((record) => ({
       ...record,
       isComplete: true,
     }));
-    expect(getWeeklyRewards(sevenDays).isRareFinalOasisUnlocked).toBe(true);
+    expect(getWeeklyProgress(sevenDays).areAllSevenDaysComplete).toBe(true);
   });
-
-  it.each([
-    [true, false, "rare-final-oasis"],
-    [false, true, "special-character"],
-    [true, true, "rare-final-oasis-with-special-character"],
-    [false, false, null],
-  ] as const)(
-    "희귀 오아시스 %s, 특별 캐릭터 %s 조합의 보류 장면을 구분한다",
-    (isRareFinalOasisUnlocked, isSpecialCharacterSettled, expected) => {
-      expect(
-        getPendingRewardScene({
-          isRareFinalOasisUnlocked,
-          isSpecialCharacterSettled,
-        }),
-      ).toBe(expected);
-    },
-  );
 });

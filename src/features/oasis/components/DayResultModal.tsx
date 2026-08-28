@@ -3,9 +3,7 @@ import type { OasisState } from "../../../types";
 import {
   WEEKLY_OASIS_TARGET_DAYS,
   getOasisAchievements,
-  getPendingRewardScene,
 } from "../oasisRules";
-import { PendingRewardSceneNotice } from "./PendingRewardSceneNotice";
 
 interface Props {
   open: boolean;
@@ -27,16 +25,11 @@ export function DayResultModal({
     isTodayFullComplete,
     allMembersParticipatedToday,
     completedDays,
-    fullCompleteStarCount,
-    allParticipatedStarCount,
-    isFinalOasisUnlocked,
-    isRareFinalOasisUnlocked,
-    isSpecialCharacterSettled,
+    fullCompleteDays,
+    allParticipatedDays,
+    isWeeklyGoalComplete,
+    areAllSevenDaysComplete,
   } = getOasisAchievements(oasisState);
-  const pendingRewardScene = getPendingRewardScene({
-    isRareFinalOasisUnlocked,
-    isSpecialCharacterSettled,
-  });
 
   return (
     <BottomSheet
@@ -94,16 +87,16 @@ export function DayResultModal({
           />
           <ResultRow label="모인 물방울" value={`${totalDrops}개`} />
           <ResultRow
-            label="주간 완성"
-            value={`${completedDays}일 / ${WEEKLY_OASIS_TARGET_DAYS}일`}
+            label="주간 공동 목표"
+            value={`${completedDays}/${WEEKLY_OASIS_TARGET_DAYS}일`}
           />
           <ResultRow
-            label="100% 별 조각"
-            value={`${fullCompleteStarCount}개`}
+            label="100% 완벽 달성"
+            value={`${fullCompleteDays}일`}
           />
           <ResultRow
-            label="전원 참여 별 조각"
-            value={`${allParticipatedStarCount}개`}
+            label="전원 참여"
+            value={`${allParticipatedDays}일`}
           />
           {daysLeft > 0 && (
             <ResultRow label="남은 기간" value={`${daysLeft}일`} />
@@ -119,12 +112,12 @@ export function DayResultModal({
             textAlign: "center",
           }}
         >
-          75% 이상인 날은 주간 완성에 쌓여요.
+          75% 이상이면 하루 오아시스가 완성돼요.
           <br />
-          100%를 채우면 완벽 달성 별 조각을 받아요.
+          100%는 완벽 달성으로 따로 기록돼요.
         </p>
 
-        {(allMembersParticipatedToday || isFinalOasisUnlocked) && (
+        {(allMembersParticipatedToday || isWeeklyGoalComplete) && (
           <p
             style={{
               margin: 0,
@@ -134,14 +127,12 @@ export function DayResultModal({
               textAlign: "center",
             }}
           >
-            {isFinalOasisUnlocked
-              ? "🎉 최종 오아시스를 얻었어요!"
+            {areAllSevenDaysComplete
+              ? "✨ 7일 모두 오아시스를 완성했어요!"
+              : isWeeklyGoalComplete
+                ? "🎉 5일 공동 목표를 달성했어요!"
               : "💧 모든 팀원이 함께 채웠어요!"}
           </p>
-        )}
-
-        {pendingRewardScene && (
-          <PendingRewardSceneNotice scene={pendingRewardScene} />
         )}
 
         <button

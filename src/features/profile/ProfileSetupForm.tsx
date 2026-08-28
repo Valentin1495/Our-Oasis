@@ -21,6 +21,15 @@ export function ProfileSetupForm({ onSubmit, isSubmitting = false }: Props) {
 
   const effectiveCupMl = isCupCustom ? parseInt(cupCustom || '0', 10) : cupMl;
   const effectiveGoalMl = isGoalCustom ? parseInt(goalCustom || '0', 10) : goalMl;
+  const isNicknameInvalid = nickname.length > 0 && nickname.trim().length === 0;
+  const isCupCustomInvalid =
+    isCupCustom &&
+    cupCustom.length > 0 &&
+    (effectiveCupMl < 50 || effectiveCupMl > 2000);
+  const isGoalCustomInvalid =
+    isGoalCustom &&
+    goalCustom.length > 0 &&
+    (effectiveGoalMl < 200 || effectiveGoalMl > 5000);
 
   const isValid =
     nickname.trim().length >= 1 &&
@@ -43,14 +52,20 @@ export function ProfileSetupForm({ onSubmit, isSubmitting = false }: Props) {
     <div style={{ padding: '0 var(--screen-padding-x)', display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* 닉네임 */}
       <div>
+        <p style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 600, color: 'var(--color-label-normal)' }}>
+          닉네임
+        </p>
         <TextField
-          label="닉네임"
+          aria-label="닉네임"
           placeholder="최대 8자"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           maxLength={8}
-          help={`${nickname.length}/8`}
+          help={isNicknameInvalid ? '공백만 입력할 수 없어요' : `${nickname.length}/8`}
+          hasError={isNicknameInvalid}
           variant="box"
+          paddingTop={0}
+          paddingBottom={0}
         />
       </div>
 
@@ -75,14 +90,19 @@ export function ProfileSetupForm({ onSubmit, isSubmitting = false }: Props) {
           />
         </div>
         {isCupCustom && (
-          <div style={{ marginTop: '10px' }}>
+          <div style={{ marginTop: '4px' }}>
             <TextField
-              label="컵 용량 (ml)"
+              aria-label="컵 용량 (ml)"
               placeholder="예: 300"
               value={cupCustom}
               onChange={(e) => setCupCustom(e.target.value.replace(/\D/g, ''))}
               inputMode="numeric"
+              suffix="ml"
+              help="50~2,000ml 사이로 입력해 주세요"
+              hasError={isCupCustomInvalid}
               variant="box"
+              paddingTop={8}
+              paddingBottom={0}
             />
           </div>
         )}
@@ -109,14 +129,19 @@ export function ProfileSetupForm({ onSubmit, isSubmitting = false }: Props) {
           />
         </div>
         {isGoalCustom && (
-          <div style={{ marginTop: '10px' }}>
+          <div style={{ marginTop: '4px' }}>
             <TextField
-              label="하루 목표 (ml)"
+              aria-label="하루 목표 (ml)"
               placeholder="예: 1800"
               value={goalCustom}
               onChange={(e) => setGoalCustom(e.target.value.replace(/\D/g, ''))}
               inputMode="numeric"
+              suffix="ml"
+              help="200~5,000ml 사이로 입력해 주세요"
+              hasError={isGoalCustomInvalid}
               variant="box"
+              paddingTop={8}
+              paddingBottom={0}
             />
           </div>
         )}
@@ -143,7 +168,10 @@ export function ProfileSetupForm({ onSubmit, isSubmitting = false }: Props) {
         onClick={handleSubmit}
         disabled={!isValid || isSubmitting}
         aria-label="프로필 설정 완료"
-        style={{ width: '100%' }}
+        style={{
+          width: '100%',
+          marginBottom: 'max(24px, env(safe-area-inset-bottom))',
+        }}
       >
         {isSubmitting ? '저장 중...' : '설정 완료'}
       </Button>

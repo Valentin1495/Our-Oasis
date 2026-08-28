@@ -2,7 +2,6 @@ export { DayResultModal } from "./components/DayResultModal";
 export { MemberList } from "./components/MemberList";
 export { OasisDebugPanel } from "./components/OasisDebugPanel";
 export { OasisScene } from "./components/OasisScene";
-export { PendingRewardSceneNotice } from "./components/PendingRewardSceneNotice";
 export {
   SharedOasisScene,
   type Member as SharedOasisMember,
@@ -53,10 +52,8 @@ export {
   didAllEligibleMembersParticipate,
   getCompletionState,
   getOasisAchievements,
-  getPendingRewardScene,
   getOasisStage,
-  getWeeklyRewards,
+  getWeeklyProgress,
   isDailyOasisComplete,
   OASIS_STAGES,
-  type PendingRewardScene,
 } from "./oasisRules";

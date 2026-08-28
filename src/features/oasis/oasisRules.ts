@@ -77,7 +77,7 @@ export function countCompletedDays(history: DayRecord[]): number {
   return history.filter((day) => day.isComplete).length;
 }
 
-export function getWeeklyRewards(history: DayRecord[]) {
+export function getWeeklyProgress(history: DayRecord[]) {
   const completedDays = history.filter((day) => day.isComplete).length;
   const fullCompleteDays = history.filter((day) => day.isFullComplete).length;
   const allParticipatedDays = history.filter(
@@ -88,40 +88,16 @@ export function getWeeklyRewards(history: DayRecord[]) {
     completedDays,
     fullCompleteDays,
     allParticipatedDays,
-    fullCompleteStarCount: fullCompleteDays,
-    allParticipatedStarCount: allParticipatedDays,
-    isFinalOasisUnlocked: completedDays >= WEEKLY_OASIS_TARGET_DAYS,
-    isRareFinalOasisUnlocked: completedDays >= 7,
-    isSpecialCharacterSettled: allParticipatedDays >= 5,
+    isWeeklyGoalComplete: completedDays >= WEEKLY_OASIS_TARGET_DAYS,
+    areAllSevenDaysComplete: completedDays >= 7,
   };
-}
-
-export type PendingRewardScene =
-  | "rare-final-oasis"
-  | "special-character"
-  | "rare-final-oasis-with-special-character";
-
-/** 아직 연출이 준비되지 않은 최종 보상 장면의 조합을 결정한다. */
-export function getPendingRewardScene({
-  isRareFinalOasisUnlocked,
-  isSpecialCharacterSettled,
-}: {
-  isRareFinalOasisUnlocked: boolean;
-  isSpecialCharacterSettled: boolean;
-}): PendingRewardScene | null {
-  if (isRareFinalOasisUnlocked && isSpecialCharacterSettled) {
-    return "rare-final-oasis-with-special-character";
-  }
-  if (isRareFinalOasisUnlocked) return "rare-final-oasis";
-  if (isSpecialCharacterSettled) return "special-character";
-  return null;
 }
 
 export function getOasisAchievements(state: OasisState) {
   const today = state.history.find(
     (day) => day.dayIndex === state.room.dayIndex,
   );
-  const weekly = getWeeklyRewards(state.history);
+  const weekly = getWeeklyProgress(state.history);
 
   return {
     isTodayComplete:

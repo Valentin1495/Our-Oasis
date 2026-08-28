@@ -42,8 +42,8 @@ export function CreateRoomForm({ onSubmit, isSubmitting = false }: Props) {
           text="물방울 75%면 오늘 완성, 100%면 완벽 달성이에요"
         />
         <RuleItem
-          icon="🏝️"
-          text="7일 중 5일을 완성하면 최종 오아시스를 얻어요"
+          icon="🎯"
+          text="7일 동안 하루 오아시스를 5번 완성해요"
         />
       </div>
 
