@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_ENABLE_OASIS_DEBUG?: "true" | "false";
+  readonly VITE_OASIS_OG_IMAGE_URL?: string;
 }
 
 interface ImportMeta {

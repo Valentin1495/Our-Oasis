@@ -57,3 +57,9 @@ export {
   isDailyOasisComplete,
   OASIS_STAGES,
 } from "./oasisRules";
+export {
+  buildOasisResultShareMessage,
+  shareOasisResult,
+  type OasisResultShareInput,
+  type ResultShareOutcome,
+} from "./resultShare";

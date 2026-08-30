@@ -158,11 +158,15 @@
 }
 
 .shared-oasis-scene__oasis-image[data-oasis-layer="IN_PROGRESS"] {
-  transform: scale(0.88);
+  transform: scale(0.92);
+}
+
+.shared-oasis-scene__oasis-image[data-oasis-layer="SHARED_SUCCESS"] {
+  transform: scale(0.82);
 }
 
 .shared-oasis-scene__oasis-image[data-oasis-layer="PERFECT_SUCCESS"] {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
 .shared-oasis-scene__oasis-image--active {
@@ -674,12 +678,12 @@
 
 @media (max-height: 700px) {
   .shared-oasis-scene {
-    height: 400px;
-    min-height: 400px;
+    height: 330px;
+    min-height: 330px;
   }
 
   .shared-oasis-scene__stage {
-    width: min(70%, 300px);
+    width: min(66%, 280px);
   }
 }
 

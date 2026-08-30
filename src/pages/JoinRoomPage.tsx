@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Top } from '@toss/tds-mobile';
-import { ScreenContainer } from '../components';
-import { JoinRoomForm } from '../features/room';
-import { useOasisStore } from '../lib/store/useOasisStore';
-import { getAnonymousUserKey } from '../lib/toss/getAnonymousUserKey';
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Top } from "@toss/tds-mobile";
+import { ScreenContainer } from "../components";
+import { JoinRoomForm } from "../features/room";
+import { useOasisStore } from "../lib/store/useOasisStore";
+import { getAnonymousUserKey } from "../lib/toss/getAnonymousUserKey";
+import {
+  rememberMembershipStartDay,
+  trackOasisEvent,
+} from "../lib/analytics/oasisAnalytics";
 
 export function JoinRoomPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialRoomId = searchParams.get('roomId') ?? '';
+  const initialRoomId = searchParams.get("roomId") ?? "";
 
-  const { profile, repository, setCurrentRoom, setProfile, rememberJoinedRoom } =
-    useOasisStore();
+  const {
+    profile,
+    repository,
+    setCurrentRoom,
+    setProfile,
+    rememberJoinedRoom,
+  } = useOasisStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,9 +29,12 @@ export function JoinRoomPage() {
     // 초대 링크로 roomId를 들고 들어왔는데 프로필이 없으면,
     // 방 코드 입력 화면을 보여줄 필요 없이 바로 프로필 설정으로 보낸다.
     if (!profile && initialRoomId) {
-      navigate(`/profile?next=join&roomId=${encodeURIComponent(initialRoomId)}`, {
-        replace: true,
-      });
+      navigate(
+        `/profile?next=join&roomId=${encodeURIComponent(initialRoomId)}`,
+        {
+          replace: true,
+        },
+      );
     }
   }, [profile, initialRoomId, navigate]);
 
@@ -35,7 +47,7 @@ export function JoinRoomPage() {
     setError(null);
     try {
       const tossAnonymousKey = await getAnonymousUserKey();
-      const { room, memberId } = await repository.joinRoom(
+      const { room, memberId, rejoined } = await repository.joinRoom(
         roomId,
         profile,
         tossAnonymousKey,
@@ -50,9 +62,17 @@ export function JoinRoomPage() {
         cupMl: profile.cupMl,
         dailyGoalMl: profile.dailyGoalMl,
       });
+      rememberMembershipStartDay(room.id, room.dayIndex);
+      if (!rejoined) {
+        trackOasisEvent("invite_joined", {
+          day_index: room.dayIndex,
+          join_method: initialRoomId ? "invite_link" : "manual_code",
+          room_capacity: room.maxMembers,
+        });
+      }
       navigate(`/oasis/${room.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '방 참여에 실패했어요.');
+      setError(e instanceof Error ? e.message : "방 참여에 실패했어요.");
       setIsSubmitting(false);
     }
   }

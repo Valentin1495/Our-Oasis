@@ -14,6 +14,7 @@ import {
   LoadingView,
   ScreenContainer,
 } from "../components";
+import { ExitIcon } from "../components/icons/ExitIcon";
 import {
   DayResultModal,
   OasisDebugPanel,
@@ -28,20 +29,23 @@ import {
 } from "../features/oasis";
 import {
   canInviteMoreMembers,
-  copyInviteLink,
+  shareInviteLink,
   wakeUpFriends,
 } from "../features/room";
 import { UndoBanner, WaterLogButton } from "../features/water";
 import { useOasisStore } from "../lib/store/useOasisStore";
+import {
+  trackDayTwoReturnOnce,
+  trackOasisEvent,
+} from "../lib/analytics/oasisAnalytics";
 import styles from "./OasisMainPage.module.css";
 
-type InviteStatus = "idle" | "copying" | "copied" | "error";
+type InviteStatus = "idle" | "sharing" | "copied" | "error";
 type WakeUpStatus = "idle" | "sending" | "shared" | "copied" | "failed";
 
 const WAKE_UP_HINT_STORAGE_KEY = "oasis:wake-up-hint-learned";
 const SHOW_OASIS_DEBUG_PANEL =
-  import.meta.env.DEV &&
-  import.meta.env.VITE_ENABLE_OASIS_DEBUG === "true";
+  import.meta.env.DEV && import.meta.env.VITE_ENABLE_OASIS_DEBUG === "true";
 
 const oasisPageStyle: CSSProperties = {
   height: "100dvh",
@@ -87,9 +91,9 @@ export function OasisMainPage() {
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>("idle");
   const [wakeUpStatus, setWakeUpStatus] = useState<WakeUpStatus>("idle");
-  const [celebrateMemberName, setCelebrateMemberName] = useState<
-    string | null
-  >(null);
+  const [celebrateMemberName, setCelebrateMemberName] = useState<string | null>(
+    null,
+  );
   const [wakeUpHintLearned, setWakeUpHintLearned] = useState(() => {
     try {
       return localStorage.getItem(WAKE_UP_HINT_STORAGE_KEY) === "1";
@@ -107,7 +111,8 @@ export function OasisMainPage() {
 
   useEffect(
     () => () => {
-      if (wakeUpResetTimerRef.current) clearTimeout(wakeUpResetTimerRef.current);
+      if (wakeUpResetTimerRef.current)
+        clearTimeout(wakeUpResetTimerRef.current);
     },
     [],
   );
@@ -146,6 +151,16 @@ export function OasisMainPage() {
     subscribeToRoom(roomId);
     return () => unsubscribeFromRoom();
   }, [roomId, subscribeToRoom, unsubscribeFromRoom]);
+
+  useEffect(() => {
+    if (!oasisState || !memberId) return;
+    trackDayTwoReturnOnce({
+      roomId: oasisState.room.id,
+      memberId,
+      dayIndex: oasisState.room.dayIndex,
+      memberCount: oasisState.members.length,
+    });
+  }, [memberId, oasisState]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -415,10 +430,19 @@ export function OasisMainPage() {
   };
 
   const handleInvite = async () => {
-    if (inviteStatus === "copying") return;
-    setInviteStatus("copying");
-    const didCopy = await copyInviteLink(roomId);
-    setInviteStatus(didCopy ? "copied" : "error");
+    if (inviteStatus === "sharing") return;
+    setInviteStatus("sharing");
+    const result = await shareInviteLink(roomId);
+    if (result !== "failed") {
+      trackOasisEvent("invite_shared", {
+        entry_point: "oasis_main",
+        share_method: result === "shared" ? "native_share" : "clipboard",
+        room_member_count: members.length,
+      });
+    }
+    setInviteStatus(
+      result === "failed" ? "error" : result === "copied" ? "copied" : "idle",
+    );
   };
 
   // 공동 기여는 멤버당 하루 최대 4개. 오늘 총 물방울(75%/100% 판정 기준)에
@@ -479,10 +503,10 @@ export function OasisMainPage() {
   };
 
   const inviteLabel =
-    inviteStatus === "copying"
-      ? "복사 중..."
+    inviteStatus === "sharing"
+      ? "준비 중..."
       : inviteStatus === "copied"
-        ? "복사 완료"
+        ? "링크 복사됨"
         : inviteStatus === "error"
           ? "다시 시도"
           : "친구 초대";
@@ -521,22 +545,23 @@ export function OasisMainPage() {
 
         <div className={styles.headerCopy}>
           <h1 className={styles.title}>{room.name}</h1>
-          <p className={styles.subtitle}>우리들의 오아시스</p>
         </div>
 
         {memberId && (
-          <IconButton
+          <button
             type="button"
             className={styles.leaveButton}
-            name="icon-x-circle-mono"
-            variant="fill"
-            iconSize={21}
-            color="#7a4b2c"
-            bgColor="rgba(255, 233, 190, 0.68)"
-            aria-label="이 오아시스에서 나가기"
             onClick={() => setLeaveDialogOpen(true)}
             disabled={isLeaving}
-          />
+            aria-label={
+              isLeaving
+                ? "이 오아시스에서 나가는 중"
+                : "이 오아시스에서 나가기"
+            }
+            aria-busy={isLeaving}
+          >
+            <ExitIcon />
+          </button>
         )}
       </header>
 
@@ -619,7 +644,7 @@ export function OasisMainPage() {
               type="button"
               className={styles.secondaryAction}
               onClick={() => void handleInvite()}
-              disabled={inviteStatus === "copying"}
+              disabled={inviteStatus === "sharing"}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="9" cy="8" r="3" />
@@ -641,7 +666,7 @@ export function OasisMainPage() {
         open={inviteStatus === "copied" || inviteStatus === "error"}
         text={
           inviteStatus === "error"
-            ? "링크를 복사하지 못했어요"
+            ? "초대를 준비하지 못했어요"
             : "초대 링크를 복사했어요"
         }
         duration={2500}

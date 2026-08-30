@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useOasisStore } from "./useOasisStore";
 import type { OasisRepository } from "../repository/OasisRepository";
 import type { OasisState, Room, WaterLogResult } from "../../types";
+import { trackOasisEventOnce } from "../analytics/oasisAnalytics";
+
+vi.mock("../analytics/oasisAnalytics", () => ({
+  trackOasisEventOnce: vi.fn(),
+}));
 
 const room: Room = {
   id: "room-1",
@@ -33,7 +38,9 @@ function makeOasisState(overrides: Partial<OasisState> = {}): OasisState {
   };
 }
 
-function makeLogResult(overrides: Partial<WaterLogResult> = {}): WaterLogResult {
+function makeLogResult(
+  overrides: Partial<WaterLogResult> = {},
+): WaterLogResult {
   return {
     logEntry: {
       logId: "log-1",
@@ -80,6 +87,7 @@ function deferred<T>() {
 
 describe("useOasisStore", () => {
   beforeEach(() => {
+    vi.mocked(trackOasisEventOnce).mockClear();
     useOasisStore.setState({
       oasisState: null,
       isLoadingOasis: false,
@@ -91,7 +99,12 @@ describe("useOasisStore", () => {
       waterLogFeedbackId: 0,
       currentRoom: room,
       memberId: "member-1",
-      profile: { id: "member-1", nickname: "나", cupMl: 250, dailyGoalMl: 2000 },
+      profile: {
+        id: "member-1",
+        nickname: "나",
+        cupMl: 250,
+        dailyGoalMl: 2000,
+      },
       joinedRooms: [],
     });
   });
@@ -143,7 +156,9 @@ describe("useOasisStore", () => {
       useOasisStore.setState({
         oasisState: makeOasisState(),
         joinedRooms: [summary, other],
-        repository: makeRepository({ leaveRoom: vi.fn().mockResolvedValue(undefined) }),
+        repository: makeRepository({
+          leaveRoom: vi.fn().mockResolvedValue(undefined),
+        }),
       });
 
       await useOasisStore.getState().leaveRoom();
@@ -213,8 +228,144 @@ describe("useOasisStore", () => {
   });
 
   describe("logWaterCup", () => {
+    it("첫 물 기록과 75% 경계 통과를 성공 응답 뒤에 기록한다", async () => {
+      const beforeState = makeOasisState({
+        members: [
+          {
+            id: "member-1",
+            nickname: "나",
+            todayProgressPercent: 50,
+            contributedDropsToday: 2,
+            hasWaterRecordToday: false,
+          },
+          {
+            id: "member-2",
+            nickname: "친구",
+            todayProgressPercent: 75,
+            contributedDropsToday: 3,
+            hasWaterRecordToday: true,
+          },
+        ],
+        totalDrops: 5,
+        sharedProgressPercent: 62.5,
+      });
+      const afterState = makeOasisState({
+        members: beforeState.members,
+        totalDrops: 6,
+        sharedProgressPercent: 75,
+      });
+      useOasisStore.setState({
+        oasisState: beforeState,
+        repository: makeRepository({
+          logWaterCup: vi.fn().mockResolvedValue(
+            makeLogResult({
+              newSharedProgressPercent: 75,
+              newConsumedMl: 250,
+            }),
+          ),
+          getOasisState: vi.fn().mockResolvedValue(afterState),
+        }),
+      });
+
+      await useOasisStore.getState().logWaterCup();
+
+      expect(trackOasisEventOnce).toHaveBeenCalledWith(
+        "first_water_logged",
+        "room-1:member-1:day-1",
+        expect.objectContaining({
+          completion_percent: 75,
+          room_member_count: 2,
+        }),
+      );
+      expect(trackOasisEventOnce).toHaveBeenCalledWith(
+        "oasis_75_completed",
+        "room-1:day-1",
+        expect.objectContaining({ completion_percent: 75 }),
+      );
+    });
+
+    it("100%와 주간 5일 달성을 75%와 별도 이벤트로 기록한다", async () => {
+      const completedDays = Array.from({ length: 4 }, (_, index) => ({
+        roomId: room.id,
+        dayIndex: index + 2,
+        localDate: `2026-01-0${index + 2}`,
+        totalDrops: 4,
+        memberCountSnapshot: 1,
+        maxDropsSnapshot: 4,
+        completionPercent: 100,
+        participatingMemberCount: 1,
+        isComplete: true,
+        isFullComplete: true,
+        allParticipated: true,
+      }));
+      const beforeState = makeOasisState({
+        totalDrops: 3,
+        sharedProgressPercent: 75,
+        history: completedDays,
+        myHydration: {
+          consumedMl: 750,
+          goalMl: 1000,
+          contributionDrops: 3,
+        },
+      });
+      const afterState = makeOasisState({
+        totalDrops: 4,
+        sharedProgressPercent: 100,
+        history: [
+          ...completedDays,
+          {
+            roomId: room.id,
+            dayIndex: 1,
+            localDate: "2026-01-01",
+            totalDrops: 4,
+            memberCountSnapshot: 1,
+            maxDropsSnapshot: 4,
+            completionPercent: 100,
+            participatingMemberCount: 1,
+            isComplete: true,
+            isFullComplete: true,
+            allParticipated: true,
+          },
+        ],
+      });
+      useOasisStore.setState({
+        oasisState: beforeState,
+        repository: makeRepository({
+          logWaterCup: vi.fn().mockResolvedValue(
+            makeLogResult({
+              newSharedProgressPercent: 100,
+              newConsumedMl: 1000,
+              contributionDropsTotal: 4,
+            }),
+          ),
+          getOasisState: vi.fn().mockResolvedValue(afterState),
+        }),
+      });
+
+      await useOasisStore.getState().logWaterCup();
+
+      expect(trackOasisEventOnce).toHaveBeenCalledWith(
+        "oasis_100_completed",
+        "room-1:day-1",
+        expect.objectContaining({ completion_percent: 100 }),
+      );
+      expect(trackOasisEventOnce).toHaveBeenCalledWith(
+        "weekly_oasis_completed",
+        "room-1",
+        expect.objectContaining({ completed_days: 5, perfect_days: 5 }),
+      );
+      expect(trackOasisEventOnce).not.toHaveBeenCalledWith(
+        "oasis_75_completed",
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
     it("탭 즉시 오아시스 상태와 피드백이 갱신된다", async () => {
-      const afterState = makeOasisState({ totalDrops: 1, sharedProgressPercent: 25 });
+      const afterState = makeOasisState({
+        totalDrops: 1,
+        sharedProgressPercent: 25,
+      });
       const getOasisState = vi.fn().mockResolvedValue(afterState);
       useOasisStore.setState({
         oasisState: makeOasisState(),
@@ -224,7 +375,9 @@ describe("useOasisStore", () => {
       await useOasisStore.getState().logWaterCup();
 
       expect(useOasisStore.getState().oasisState?.totalDrops).toBe(1);
-      expect(useOasisStore.getState().waterLogFeedback?.dropsContributed).toBe(1);
+      expect(useOasisStore.getState().waterLogFeedback?.dropsContributed).toBe(
+        1,
+      );
       expect(useOasisStore.getState().isLoggingWater).toBe(false);
     });
 
@@ -244,8 +397,22 @@ describe("useOasisStore", () => {
     it("연속으로 두 번 탭하면 각각 독립적으로 기록된다 (중복 없음)", async () => {
       const logWaterCup = vi
         .fn()
-        .mockResolvedValueOnce(makeLogResult({ dropsContributed: 1, contributionDropsTotal: 1 }))
-        .mockResolvedValueOnce(makeLogResult({ dropsContributed: 1, contributionDropsTotal: 2, logEntry: { logId: "log-2", memberId: "member-1", roomId: room.id, recordedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 5000).toISOString() } }));
+        .mockResolvedValueOnce(
+          makeLogResult({ dropsContributed: 1, contributionDropsTotal: 1 }),
+        )
+        .mockResolvedValueOnce(
+          makeLogResult({
+            dropsContributed: 1,
+            contributionDropsTotal: 2,
+            logEntry: {
+              logId: "log-2",
+              memberId: "member-1",
+              roomId: room.id,
+              recordedAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 5000).toISOString(),
+            },
+          }),
+        );
       const getOasisState = vi.fn().mockResolvedValue(makeOasisState());
       useOasisStore.setState({
         oasisState: makeOasisState(),
@@ -279,7 +446,10 @@ describe("useOasisStore", () => {
       useOasisStore.setState({
         oasisState: makeOasisState(),
         isLoggingWater: true,
-        repository: makeRepository({ logWaterCup: logWaterCupFn, getOasisState }),
+        repository: makeRepository({
+          logWaterCup: logWaterCupFn,
+          getOasisState,
+        }),
       });
 
       await useOasisStore.getState().logWaterCup();
@@ -304,7 +474,10 @@ describe("useOasisStore", () => {
           },
           timerId: setTimeout(() => {}, 10000),
         },
-        repository: makeRepository({ undoWaterCup: undoWaterCupFn, getOasisState }),
+        repository: makeRepository({
+          undoWaterCup: undoWaterCupFn,
+          getOasisState,
+        }),
       });
 
       await useOasisStore.getState().undoWaterCup();
@@ -384,7 +557,9 @@ describe("useOasisStore", () => {
 
       expect(useOasisStore.getState().currentRoom).toEqual(room);
       expect(useOasisStore.getState().memberId).toBe("member-1");
-      expect(useOasisStore.getState().oasisError).toBe("방에 참여 중이 아니에요.");
+      expect(useOasisStore.getState().oasisError).toBe(
+        "방에 참여 중이 아니에요.",
+      );
     });
   });
 });

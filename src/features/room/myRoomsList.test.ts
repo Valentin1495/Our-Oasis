@@ -34,6 +34,32 @@ describe("mergeRoomSummaries", () => {
     expect(merged[0].nickname).toBe("서버닉네임");
   });
 
+  it("서버 조회 후에도 로컬의 최근 방문 순서를 유지한다", () => {
+    const recentRoom = makeSummary({
+      room: { ...makeSummary().room, id: "room-recent" },
+      nickname: "최근 방문 로컬",
+    });
+    const olderRoom = makeSummary({
+      room: { ...makeSummary().room, id: "room-older" },
+      nickname: "이전 방문 로컬",
+    });
+    const server = [
+      { ...olderRoom, nickname: "이전 방문 서버" },
+      { ...recentRoom, nickname: "최근 방문 서버" },
+    ];
+
+    const merged = mergeRoomSummaries(server, [recentRoom, olderRoom]);
+
+    expect(merged.map((item) => item.room.id)).toEqual([
+      "room-recent",
+      "room-older",
+    ]);
+    expect(merged.map((item) => item.nickname)).toEqual([
+      "최근 방문 서버",
+      "이전 방문 서버",
+    ]);
+  });
+
   it("로컬에만 있는 방은 그대로 유지한다", () => {
     const server = [makeSummary({ room: { ...makeSummary().room, id: "room-server" } })];
     const local = [makeSummary({ room: { ...makeSummary().room, id: "room-local" } })];

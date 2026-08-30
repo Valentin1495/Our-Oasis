@@ -13,11 +13,13 @@
   --oasis-mint-300: #7ddcd4;
   --oasis-mint-400: #4ecdc4;
   --oasis-mint-500: #2db8af;
+  --oasis-mint-700: #137d78;
   --oasis-blue-100: #e3f0ff;
   --oasis-blue-200: #b8d8fe;
   --oasis-blue-300: #74b8fd;
   --oasis-blue-400: #3e8ef7;
   --oasis-blue-500: #1b6fe8;
+  --oasis-perfect-500: #7b5bd6;
 
   /* 레이아웃 */
   --bottom-cta-height: 80px;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@toss/tds-mobile";
 import { buildInviteUrl, shareInviteLink } from "./inviteLink";
 import type { ShareInviteLinkResult } from "./inviteLink";
+import { trackOasisEvent } from "../../lib/analytics/oasisAnalytics";
 
 interface Props {
   roomId: string;
@@ -26,6 +27,12 @@ export function InviteLinkCard({ roomId }: Props) {
 
   async function handleShare() {
     const shareResult = await shareInviteLink(roomId);
+    if (shareResult !== "failed") {
+      trackOasisEvent("invite_shared", {
+        entry_point: "room_created",
+        share_method: shareResult === "shared" ? "native_share" : "clipboard",
+      });
+    }
     setResult(shareResult);
     if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     resetTimerRef.current = setTimeout(() => setResult(null), 2500);
@@ -51,7 +58,7 @@ export function InviteLinkCard({ roomId }: Props) {
           fontWeight: 600,
         }}
       >
-        친구에게 초대 링크를 보내세요
+        함께 오아시스를 키울 친구를 초대하세요
       </p>
       <div
         style={{
@@ -70,10 +77,10 @@ export function InviteLinkCard({ roomId }: Props) {
         size="medium"
         variant={result ? "weak" : "fill"}
         onClick={handleShare}
-        aria-label={result ? RESULT_LABEL[result] : "초대 링크 공유하기"}
+        aria-label={result ? RESULT_LABEL[result] : "함께할 친구 초대하기"}
         style={{ width: "100%" }}
       >
-        {result ? RESULT_LABEL[result] : "초대 링크 공유하기"}
+        {result ? RESULT_LABEL[result] : "함께할 친구 초대하기"}
       </Button>
     </div>
   );

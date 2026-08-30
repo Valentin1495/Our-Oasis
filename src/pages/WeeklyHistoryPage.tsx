@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Top, ProgressBar } from "@toss/tds-mobile";
 import {
@@ -11,13 +11,19 @@ import { useOasisStore } from "../lib/store/useOasisStore";
 import {
   WEEKLY_OASIS_TARGET_DAYS,
   getWeeklyProgress,
+  shareOasisResult,
+  type ResultShareOutcome,
 } from "../features/oasis";
+import { trackOasisEvent } from "../lib/analytics/oasisAnalytics";
 
 export function WeeklyHistoryPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const { oasisState, isLoadingOasis, oasisError, loadOasisState } =
     useOasisStore();
+  const [shareStatus, setShareStatus] = useState<
+    "idle" | "sharing" | ResultShareOutcome
+  >("idle");
 
   useEffect(() => {
     if (!roomId) return;
@@ -50,6 +56,7 @@ export function WeeklyHistoryPage() {
   }
 
   const { history, room } = oasisState;
+  const roomMemberCount = oasisState.members.length;
   const {
     completedDays,
     fullCompleteDays,
@@ -57,6 +64,45 @@ export function WeeklyHistoryPage() {
     isWeeklyGoalComplete,
     areAllSevenDaysComplete,
   } = getWeeklyProgress(history);
+  const weeklyResultGrade = areAllSevenDaysComplete
+    ? "seven_day_perfect"
+    : "weekly_success";
+  const weeklyShareLabel = areAllSevenDaysComplete
+    ? "7일 완성 기록 자랑하기"
+    : "함께 키운 기록 자랑하기";
+  const shareFeedback =
+    shareStatus === "shared"
+      ? "공유 화면을 열었어요."
+      : shareStatus === "copied"
+        ? "결과 메시지를 복사했어요."
+        : shareStatus === "failed"
+          ? "공유하지 못했어요. 다시 시도해 주세요."
+          : null;
+
+  async function handleShareWeeklyResult() {
+    if (!isWeeklyGoalComplete || shareStatus === "sharing") return;
+    setShareStatus("sharing");
+    const outcome = await shareOasisResult({
+      kind: weeklyResultGrade,
+      roomId: room.id,
+      roomName: room.name,
+      completedDays,
+      perfectDays: fullCompleteDays,
+      allParticipatedDays,
+    });
+    setShareStatus(outcome);
+
+    if (outcome !== "failed") {
+      trackOasisEvent("weekly_result_shared", {
+        result_grade: weeklyResultGrade,
+        share_method: outcome === "shared" ? "native_share" : "clipboard",
+        completed_days: completedDays,
+        perfect_days: fullCompleteDays,
+        all_participated_days: allParticipatedDays,
+        room_member_count: roomMemberCount,
+      });
+    }
+  }
 
   return (
     <ScreenContainer>
@@ -115,6 +161,55 @@ export function WeeklyHistoryPage() {
             {allParticipatedDays}일
           </p>
         </div>
+        {isWeeklyGoalComplete && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              marginTop: "12px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => void handleShareWeeklyResult()}
+              disabled={shareStatus === "sharing"}
+              aria-label={weeklyShareLabel}
+              style={{
+                width: "100%",
+                minHeight: "52px",
+                padding: "14px 16px",
+                border: 0,
+                borderRadius: "14px",
+                backgroundColor: areAllSevenDaysComplete
+                  ? "var(--oasis-perfect-500)"
+                  : "var(--oasis-mint-700)",
+                color: "#fff",
+                fontSize: "16px",
+                fontWeight: 700,
+                cursor: shareStatus === "sharing" ? "default" : "pointer",
+                opacity: shareStatus === "sharing" ? 0.65 : 1,
+              }}
+            >
+              {shareStatus === "sharing" ? "공유 준비 중..." : weeklyShareLabel}
+            </button>
+            <span
+              aria-live="polite"
+              style={{
+                minHeight: "20px",
+                fontSize: "13px",
+                lineHeight: "20px",
+                color:
+                  shareStatus === "failed"
+                    ? "var(--color-status-negative, #e42939)"
+                    : "var(--color-label-alternative)",
+                textAlign: "center",
+              }}
+            >
+              {shareFeedback}
+            </span>
+          </div>
+        )}
       </div>
 
       <div
@@ -235,9 +330,9 @@ export function WeeklyHistoryPage() {
             borderRadius: "14px",
             cursor: "pointer",
           }}
-          aria-label="오아시스 메인으로 돌아가기"
+          aria-label="오아시스로 돌아가기"
         >
-          메인으로 돌아가기
+          돌아가기
         </button>
       </div>
     </ScreenContainer>

@@ -1,22 +1,31 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Top } from '@toss/tds-mobile';
-import { ScreenContainer, InlineError } from '../components';
-import { CreateRoomForm, InviteLinkCard } from '../features/room';
-import { useOasisStore } from '../lib/store/useOasisStore';
-import { getAnonymousUserKey } from '../lib/toss/getAnonymousUserKey';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Top } from "@toss/tds-mobile";
+import { ScreenContainer, InlineError } from "../components";
+import { CreateRoomForm, InviteLinkCard } from "../features/room";
+import { useOasisStore } from "../lib/store/useOasisStore";
+import { getAnonymousUserKey } from "../lib/toss/getAnonymousUserKey";
+import {
+  rememberMembershipStartDay,
+  trackOasisEvent,
+} from "../lib/analytics/oasisAnalytics";
 
 export function CreateRoomPage() {
   const navigate = useNavigate();
-  const { profile, repository, setCurrentRoom, setProfile, rememberJoinedRoom } =
-    useOasisStore();
+  const {
+    profile,
+    repository,
+    setCurrentRoom,
+    setProfile,
+    rememberJoinedRoom,
+  } = useOasisStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 
   async function handleCreate(roomName: string) {
     if (!profile) {
-      navigate('/profile?next=create');
+      navigate("/profile?next=create");
       return;
     }
     setIsSubmitting(true);
@@ -38,9 +47,15 @@ export function CreateRoomPage() {
         cupMl: profile.cupMl,
         dailyGoalMl: profile.dailyGoalMl,
       });
+      rememberMembershipStartDay(room.id, room.dayIndex);
+      trackOasisEvent("room_created", {
+        day_index: room.dayIndex,
+        room_member_count: 1,
+        room_capacity: room.maxMembers,
+      });
       setCreatedRoomId(room.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '방 만들기에 실패했어요.');
+      setError(e instanceof Error ? e.message : "방 만들기에 실패했어요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,37 +79,43 @@ export function CreateRoomPage() {
       />
 
       {createdRoomId ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ padding: '0 20px' }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div style={{ padding: "0 20px" }}>
             <p
               style={{
-                fontSize: '17px',
+                fontSize: "17px",
                 fontWeight: 700,
-                color: 'var(--color-label-normal)',
+                color: "var(--color-label-normal)",
                 margin: 0,
               }}
             >
               방이 만들어졌어요! 🎉
             </p>
-            <p style={{ fontSize: '14px', color: 'var(--color-label-alternative)', margin: '8px 0 0' }}>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "var(--color-label-alternative)",
+                margin: "8px 0 0",
+              }}
+            >
               아래 링크를 친구에게 보내 함께 시작해요.
             </p>
           </div>
           <InviteLinkCard roomId={createdRoomId} />
-          <div style={{ padding: '0 20px' }}>
+          <div style={{ padding: "0 20px" }}>
             <button
               type="button"
               onClick={handleGoToOasis}
               style={{
-                width: '100%',
-                padding: '16px',
-                backgroundColor: 'var(--oasis-mint-500)',
-                color: '#fff',
-                fontSize: '17px',
+                width: "100%",
+                padding: "16px",
+                backgroundColor: "var(--oasis-mint-500)",
+                color: "#fff",
+                fontSize: "17px",
                 fontWeight: 700,
-                border: 'none',
-                borderRadius: '14px',
-                cursor: 'pointer',
+                border: "none",
+                borderRadius: "14px",
+                cursor: "pointer",
               }}
               aria-label="오아시스 메인 화면으로 이동"
             >
@@ -105,7 +126,9 @@ export function CreateRoomPage() {
       ) : (
         <>
           <CreateRoomForm onSubmit={handleCreate} isSubmitting={isSubmitting} />
-          {error && <InlineError message={error} onRetry={() => setError(null)} />}
+          {error && (
+            <InlineError message={error} onRetry={() => setError(null)} />
+          )}
         </>
       )}
     </ScreenContainer>

@@ -43,7 +43,7 @@ export function CreateRoomForm({ onSubmit, isSubmitting = false }: Props) {
         />
         <RuleItem
           icon="🎯"
-          text="7일 동안 하루 오아시스를 5번 완성해요"
+          text="7일 중 5일 이상 오아시스를 완성하면 공동 목표를 달성해요"
         />
       </div>
 

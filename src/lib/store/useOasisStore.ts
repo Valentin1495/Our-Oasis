@@ -12,6 +12,8 @@ import type {
   WaterLogEntry,
 } from "../../types";
 import { getAnonymousUserKey } from "../toss/getAnonymousUserKey";
+import { trackOasisEventOnce } from "../analytics/oasisAnalytics";
+import { getOasisAchievements } from "../../features/oasis/oasisRules";
 
 /** 기록 직후 5초 내에 되돌릴 수 있는 창. 버튼은 막지 않는다. */
 interface UndoWindow {
@@ -150,9 +152,7 @@ export const useOasisStore = create<OasisStore>()(
           const beforeLoad = get();
           const { repository } = beforeLoad;
           const sessionMemberId =
-            beforeLoad.currentRoom?.id === roomId
-              ? beforeLoad.memberId
-              : null;
+            beforeLoad.currentRoom?.id === roomId ? beforeLoad.memberId : null;
           const oasisState = await repository.getOasisState(
             roomId,
             sessionMemberId,
@@ -292,10 +292,66 @@ export const useOasisStore = create<OasisStore>()(
 
         set({ isLoggingWater: true, oasisError: null });
         try {
+          const achievementsBefore = getOasisAchievements(oasisState);
+          const wasHydrationEmpty =
+            oasisState.myHydration !== null &&
+            oasisState.myHydration.consumedMl <= 0;
           const result = await repository.logWaterCup(currentRoom.id, memberId);
 
           // 기록 즉시 오아시스 상태 반영
           await get().loadOasisState(currentRoom.id);
+
+          const refreshedState = get().oasisState;
+          const activeState =
+            refreshedState?.room.id === currentRoom.id
+              ? refreshedState
+              : oasisState;
+          const achievementsAfter = getOasisAchievements(activeState);
+          const eventParams = {
+            day_index: currentRoom.dayIndex,
+            room_member_count: activeState.members.length,
+            drops_contributed: result.dropsContributed,
+            completion_percent: result.newSharedProgressPercent,
+          };
+
+          if (wasHydrationEmpty && result.newConsumedMl > 0) {
+            trackOasisEventOnce(
+              "first_water_logged",
+              `${currentRoom.id}:${memberId}:day-${currentRoom.dayIndex}`,
+              eventParams,
+            );
+          }
+          if (
+            !achievementsBefore.isTodayComplete &&
+            result.newSharedProgressPercent >= 75
+          ) {
+            trackOasisEventOnce(
+              "oasis_75_completed",
+              `${currentRoom.id}:day-${currentRoom.dayIndex}`,
+              eventParams,
+            );
+          }
+          if (
+            !achievementsBefore.isTodayFullComplete &&
+            result.newSharedProgressPercent >= 100
+          ) {
+            trackOasisEventOnce(
+              "oasis_100_completed",
+              `${currentRoom.id}:day-${currentRoom.dayIndex}`,
+              eventParams,
+            );
+          }
+          if (
+            !achievementsBefore.isWeeklyGoalComplete &&
+            achievementsAfter.isWeeklyGoalComplete
+          ) {
+            trackOasisEventOnce("weekly_oasis_completed", currentRoom.id, {
+              day_index: currentRoom.dayIndex,
+              room_member_count: activeState.members.length,
+              completed_days: achievementsAfter.completedDays,
+              perfect_days: achievementsAfter.fullCompleteDays,
+            });
+          }
 
           const goalMl = get().profile?.dailyGoalMl ?? 0;
           const confirmedAt = Date.now();
@@ -383,9 +439,7 @@ export const useOasisStore = create<OasisStore>()(
         } catch (e) {
           set({
             oasisError:
-              e instanceof Error
-                ? e.message
-                : "오아시스에서 나가지 못했어요.",
+              e instanceof Error ? e.message : "오아시스에서 나가지 못했어요.",
           });
           throw e instanceof Error
             ? e
