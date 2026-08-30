@@ -474,7 +474,7 @@ export function OasisMainPage() {
     setWakeUpStatus("sending");
     wakeUpFriends(roomId, room.name, [target.nickname])
       .then((result) => {
-        setWakeUpStatus(result);
+        setWakeUpStatus(result === "shared" ? "idle" : result);
         if (wakeUpResetTimerRef.current) {
           clearTimeout(wakeUpResetTimerRef.current);
         }
@@ -677,17 +677,11 @@ export function OasisMainPage() {
 
       <Toast
         position="bottom"
-        open={
-          wakeUpStatus === "shared" ||
-          wakeUpStatus === "copied" ||
-          wakeUpStatus === "failed"
-        }
+        open={wakeUpStatus === "copied" || wakeUpStatus === "failed"}
         text={
           wakeUpStatus === "failed"
             ? "깨우기 메시지를 보내지 못했어요"
-            : wakeUpStatus === "copied"
-              ? "깨우기 메시지를 복사했어요"
-              : "친구에게 깨우기 메시지를 보냈어요"
+            : "깨우기 메시지를 복사했어요"
         }
         duration={2500}
         onClose={() => setWakeUpStatus("idle")}
